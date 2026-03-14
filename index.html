@@ -1,1 +1,1572 @@
+<!DOCTYPE html>
 
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CNC·FORGE CAM</title>
+<style>
+:root {
+  --bg0:#07090d;--bg1:#0b0e14;--bg2:#0f1319;--bg3:#141920;--bg4:#1a2130;
+  --bd:#1f2d40;--bd2:#263548;
+  --a1:#00c8ff;--a2:#ff7700;--a3:#00e87a;--a4:#ffe135;--a5:#c46bff;
+  --t1:#d0e4f4;--t2:#7a9bb8;--t3:#3d5570;
+  --H: system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --M: 'Courier New', 'Lucida Console', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+
+/* ── BODY: natural scroll, no fixed height tricks ── */
+html,body{background:var(–bg0);color:var(–t1);font-family:var(–H);}
+
+/* ── TOPBAR ── */
+.topbar{
+background:var(–bg1);border-bottom:2px solid var(–bd);
+display:flex;align-items:center;flex-wrap:wrap;
+padding:8px 14px;gap:6px;
+}
+.logo{font-size:20px;font-weight:700;letter-spacing:3px;color:var(–a1);margin-right:10px;}
+.logo em{color:var(–a2);font-style:normal;}
+.tb-btn{
+padding:7px 13px;font-family:var(–H);font-size:12px;font-weight:700;
+letter-spacing:1px;text-transform:uppercase;color:var(–t3);
+background:var(–bg3);border:1px solid var(–bd);border-radius:3px;cursor:pointer;transition:.15s;
+}
+.tb-btn:hover{color:var(–a1);border-color:var(–a1);}
+.tb-gen{color:var(–a3);border-color:var(–a3);background:rgba(0,232,122,.08);}
+.tb-exp{color:var(–a2);border-color:var(–a2);background:rgba(255,119,0,.08);}
+.tb-voice{color:#c46bff;border-color:#c46bff;background:rgba(196,107,255,.08);}
+.tb-voice.listening{color:#ff2d55;border-color:#ff2d55;background:rgba(255,45,85,.15);animation:pulse 1s infinite;}
+#viewer3d canvas{outline:none;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ── LAYOUT: 3 columns on desktop, 1 on mobile ── */
+.layout{
+display:grid;
+grid-template-columns:260px 1fr 250px;
+align-items:start;
+}
+@media(max-width:800px){
+.layout{grid-template-columns:1fr;}
+}
+
+/* ── COLUMN ── */
+.col{background:var(–bg1);border-right:1px solid var(–bd);}
+.col:last-child{border-right:none;border-left:1px solid var(–bd);}
+@media(max-width:800px){
+.col{border-right:none;border-bottom:2px solid var(–bd2);}
+.col:last-child{border-left:none;}
+}
+
+/* ── SECTION ── */
+.sec{
+padding:10px 12px 7px;font-size:10px;font-weight:700;letter-spacing:2px;
+text-transform:uppercase;color:var(–t3);border-bottom:1px solid var(–bd);
+display:flex;align-items:center;gap:7px;background:var(–bg1);position:sticky;top:0;z-index:2;
+}
+.sec::before{content:’’;width:14px;height:1px;background:var(–a1);flex-shrink:0;}
+.sb{padding:12px;}
+
+/* ── INPUTS ── */
+.lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(–t3);display:block;margin-bottom:3px;}
+.sel,.inp{
+width:100%;background:var(–bg3);border:1px solid var(–bd);color:var(–t1);
+padding:6px 8px;font-family:var(–M);font-size:11px;border-radius:2px;
+outline:none;margin-bottom:8px;transition:border-color .15s;
+}
+.sel:focus,.inp:focus{border-color:var(–a1);}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.iw{display:flex;flex-direction:column;}
+
+/* ── MACHINE CARDS ── */
+.mc{
+padding:8px 10px;border:1px solid var(–bd);border-radius:3px;
+cursor:pointer;transition:.15s;display:flex;align-items:center;gap:8px;margin-bottom:5px;
+}
+.mc:hover{border-color:var(–a1);background:rgba(0,200,255,.04);}
+.mc.act{border-color:var(–a1);background:rgba(0,200,255,.09);}
+.mc-ico{font-size:15px;width:22px;text-align:center;flex-shrink:0;}
+.mc-name{font-size:13px;font-weight:700;}
+.mc-sub{font-size:9px;color:var(–t3);font-family:var(–M);}
+.mc-chk{margin-left:auto;width:13px;height:13px;border-radius:50%;border:1.5px solid var(–bd2);display:flex;align-items:center;justify-content:center;font-size:8px;}
+.mc.act .mc-chk{background:var(–a1);border-color:var(–a1);color:#000;}
+
+/* ── OP BUTTONS ── */
+.op-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:8px;}
+.op-btn{
+padding:8px 3px;border:1px solid var(–bd);background:var(–bg3);
+color:var(–t3);font-family:var(–H);font-size:10px;font-weight:700;
+text-transform:uppercase;cursor:pointer;border-radius:3px;text-align:center;transition:.15s;
+}
+.op-btn:hover{border-color:var(–a3);color:var(–a3);}
+.op-btn.act{border-color:var(–a3);background:rgba(0,232,122,.1);color:var(–a3);}
+.op-ico{font-size:15px;display:block;margin-bottom:2px;}
+
+/* ── ORI ── */
+.ori-wrap{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.ori-btn{
+padding:9px 6px;border:1px solid var(–bd);background:var(–bg3);
+color:var(–t3);font-family:var(–H);font-size:11px;font-weight:700;
+text-transform:uppercase;cursor:pointer;border-radius:3px;text-align:center;transition:.15s;
+}
+.ori-btn:hover{border-color:var(–a2);color:var(–a2);}
+.ori-btn.act{border-color:var(–a2);background:rgba(255,119,0,.12);color:var(–a2);}
+
+/* ── VIEWPORT ── */
+.vp-wrap{
+background:radial-gradient(ellipse at center,#0d1520,#07090d);
+position:relative;overflow:hidden;height:340px;
+}
+@media(max-width:800px){.vp-wrap{height:260px;}}
+#simCanvas{display:block;width:100%;height:100%;}
+.vp-info{
+position:absolute;top:8px;left:8px;right:8px;
+display:flex;justify-content:space-between;pointer-events:none;gap:6px;flex-wrap:wrap;
+}
+.chip{
+font-family:var(–M);font-size:10px;color:var(–a1);
+background:rgba(7,9,13,.85);padding:3px 8px;
+border:1px solid var(–bd);border-radius:2px;
+}
+.chip.ok{color:var(–a3);}
+
+/* sim controls */
+.sim-wrap{
+background:var(–bg2);border-top:1px solid var(–bd);
+padding:7px 10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.sm-btn{
+padding:5px 10px;font-family:var(–H);font-size:11px;font-weight:700;
+color:var(–t2);background:var(–bg3);border:1px solid var(–bd);
+border-radius:3px;cursor:pointer;transition:.15s;
+}
+.sm-btn:hover{color:var(–a1);border-color:var(–a1);}
+.sm-btn.play{color:var(–a1);border-color:var(–a1);background:rgba(0,200,255,.1);}
+.sim-prog{flex:1;height:3px;background:var(–bd);border-radius:2px;min-width:40px;}
+.sim-fill{height:100%;border-radius:2px;width:0%;background:linear-gradient(90deg,var(–a1),var(–a3));box-shadow:0 0 8px var(–a1);transition:width .08s;}
+
+/* ── GCODE ── */
+.gcode-wrap{background:var(–bg0);border-top:1px solid var(–bd);}
+.gcode-header{
+display:flex;align-items:center;flex-wrap:wrap;
+padding:5px 10px;gap:4px;border-bottom:1px solid var(–bd);background:var(–bg1);
+}
+.gtab{
+padding:4px 10px;font-family:var(–H);font-size:10px;font-weight:700;
+text-transform:uppercase;letter-spacing:1px;color:var(–t3);
+background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;
+}
+.gtab:hover{color:var(–t1);}
+.gtab.act{color:var(–a1);border-bottom-color:var(–a1);}
+.gcode-scroll{
+height:220px;overflow-y:auto;overflow-x:auto;padding:6px 10px;
+scrollbar-width:thin;scrollbar-color:var(–bd2) var(–bg0);
+}
+.gcode-scroll::-webkit-scrollbar{width:5px;height:5px;}
+.gcode-scroll::-webkit-scrollbar-thumb{background:var(–bd2);border-radius:3px;}
+.gc-line{
+font-family:var(–M);font-size:10.5px;line-height:1.8;
+white-space:nowrap;display:flex;gap:10px;
+}
+.gc-line:hover{background:rgba(255,255,255,.03);}
+.gc-n{color:var(–bd2);min-width:26px;}.gc-k{color:var(–a1);}.gc-x{color:#ff6b6b;}
+.gc-y{color:#6bffb8;}.gc-z{color:var(–a4);}.gc-f{color:var(–a5);}
+.gc-s{color:var(–a2);}.gc-cm{color:var(–t3);font-style:italic;}.gc-hd{color:var(–a3);font-weight:700;}
+
+/* ── TOOL LIST ── */
+.tl-filter{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+.tl-f{
+padding:3px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+border:1px solid var(–bd);border-radius:2px;cursor:pointer;background:var(–bg3);color:var(–t3);transition:.15s;
+}
+.tl-f:hover{color:var(–a4);border-color:var(–a4);}
+.tl-f.act{color:var(–a4);border-color:var(–a4);background:rgba(255,225,53,.08);}
+.ti{
+padding:7px 9px;border:1px solid var(–bd);border-radius:3px;
+cursor:pointer;transition:.15s;display:flex;align-items:center;gap:7px;margin-bottom:4px;
+}
+.ti:hover{border-color:var(–a4);background:rgba(255,225,53,.04);}
+.ti.act{border-color:var(–a4);background:rgba(255,225,53,.09);}
+.ti-ico{font-size:14px;width:22px;text-align:center;flex-shrink:0;}
+.ti-name{font-size:11px;font-weight:700;}
+.ti-spec{font-size:9px;color:var(–t3);font-family:var(–M);}
+.ti-mat{margin-left:auto;font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px;}
+.hm{background:rgba(0,200,255,.15);color:var(–a1);}
+.hss{background:rgba(255,225,53,.15);color:var(–a4);}
+
+/* ── STATS ── */
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.stat-box{padding:8px;background:var(–bg3);border:1px solid var(–bd);border-radius:3px;text-align:center;}
+.stat-val{font-family:var(–M);font-size:15px;font-weight:700;color:var(–a1);}
+.stat-lbl{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(–t3);margin-top:2px;}
+
+/* ── FILE DROP ── */
+.drop{
+border:2px dashed var(–bd2);border-radius:4px;padding:16px 10px;
+text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;position:relative;
+}
+.drop:hover,.drop.over{border-color:var(–a1);background:rgba(0,200,255,.05);}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.drop-ico{font-size:22px;opacity:.5;margin-bottom:5px;}
+.drop-txt{font-size:10px;color:var(–t3);line-height:1.6;}
+.drop-txt strong{color:var(–a1);}
+.fc{
+display:flex;align-items:center;gap:6px;padding:5px 7px;
+background:var(–bg4);border:1px solid var(–bd2);border-radius:3px;
+font-family:var(–M);font-size:10px;color:var(–t2);margin-bottom:4px;
+}
+.fc-rm{cursor:pointer;color:var(–t3);margin-left:auto;}
+.fc-rm:hover{color:#ff2d55;}
+.fc-badge{font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px;}
+.b-dxf{background:rgba(0,200,255,.2);color:var(–a1);}
+.b-stp{background:rgba(196,107,255,.2);color:var(–a5);}
+.b-nc{background:rgba(0,232,122,.2);color:var(–a3);}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(–bg2);border:1px solid var(–bd2);border-radius:6px;padding:22px;width:340px;max-width:95vw;}
+.modal-title{font-size:15px;font-weight:700;letter-spacing:2px;color:var(–a1);text-transform:uppercase;margin-bottom:16px;}
+.modal-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+.btn-ok{padding:7px 20px;background:var(–a1);color:#000;border:none;border-radius:2px;font-family:var(–H);font-weight:700;font-size:12px;text-transform:uppercase;cursor:pointer;}
+.btn-cancel{padding:7px 16px;background:none;border:1px solid var(–bd2);color:var(–t3);border-radius:2px;font-family:var(–H);font-size:11px;cursor:pointer;text-transform:uppercase;}
+
+/* ── NOTIF ── */
+#notif{
+position:fixed;bottom:16px;right:14px;
+padding:9px 14px;border-radius:3px;font-size:11px;font-weight:700;
+border-left:3px solid;background:var(–bg2);z-index:600;opacity:0;
+transform:translateY(8px);transition:.25s;pointer-events:none;
+box-shadow:0 4px 24px rgba(0,0,0,.6);font-family:var(–H);
+}
+#notif.show{opacity:1;transform:translateY(0);}
+#notif.ok{border-color:var(–a3);color:var(–a3);}
+#notif.inf{border-color:var(–a1);color:var(–a1);}
+#notif.wrn{border-color:var(–a4);color:var(–a4);}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">CNC<em>·</em>FORGE</div>
+  <button class="tb-btn tb-gen" onclick="generateCode()">⚡ Generera NC</button>
+  <button class="tb-btn tb-exp" onclick="openExport()">⬇ Exportera</button>
+  <button class="tb-btn" onclick="runSim()">▶ Simulera</button>
+  <button class="tb-btn" onclick="clearAll()">✕ Rensa</button>
+  <button class="tb-btn tb-voice" id="voiceBtn" onclick="toggleVoice()">🎤 Röst</button>
+</div>
+<!-- VOICE PANEL -->
+<div id="voicePanel" style="display:none;background:#0b0e14;border-bottom:2px solid #1f2d40;padding:8px 14px;display:none;align-items:center;gap:10px;flex-wrap:wrap;">
+  <div id="voiceStatus" style="font-family:monospace;font-size:11px;color:#3d5570;flex:1;min-width:120px;">Säg ett kommando...</div>
+  <div id="voiceResult" style="font-family:monospace;font-size:12px;color:#00c8ff;flex:2;min-width:160px;"></div>
+  <div style="font-size:9px;color:#3d5570;line-height:1.7;">
+    <span style="color:#7a9bb8">Maskin:</span> "fanuc" "heidenhain" "siemens" "haas" "dmg" "mazak" "okuma" "mitsubishi" &nbsp;|&nbsp;
+    <span style="color:#7a9bb8">Operation:</span> "fräs" "borr" "gäng" "ficka" "kontur" "plan" "spiral" &nbsp;|&nbsp;
+    <span style="color:#7a9bb8">Material:</span> "aluminium" "stål" "rostfritt" "titan" &nbsp;|&nbsp;
+    <span style="color:#7a9bb8">RPM:</span> "rpm 5000" &nbsp;|&nbsp;
+    <span style="color:#7a9bb8">Matning:</span> "matning 800" &nbsp;|&nbsp;
+    <span style="color:#7a9bb8">Åtgärd:</span> "generera" "simulera" "rensa" "exportera"
+  </div>
+</div>
+
+<div class="layout">
+
+<div class="col">
+
+<div class="sec">Maskin</div>
+<div class="sb" id="machineSection">
+  <div class="mc act" data-m="heidenhain" onclick="selMachine(this)"><div class="mc-ico">⚙️</div><div><div class="mc-name">Heidenhain</div><div class="mc-sub">iTNC 530 / TNC 640 / TNC 7</div></div><div class="mc-chk">✓</div></div>
+  <div class="mc" data-m="fanuc" onclick="selMachine(this)"><div class="mc-ico">🏭</div><div><div class="mc-name">Fanuc</div><div class="mc-sub">0i-MF / 30i / 31i / 32i / 18i</div></div><div class="mc-chk"></div></div>
+  <div class="mc" data-m="siemens" onclick="selMachine(this)"><div class="mc-ico">🔷</div><div><div class="mc-name">Siemens / SP200</div><div class="mc-sub">840D SL / 828D / Sinumerik ONE</div></div><div class="mc-chk"></div></div>
+  <div class="mc" data-m="dmg" onclick="selMachine(this)"><div class="mc-ico">🟠</div><div><div class="mc-name">DMG Mori</div><div class="mc-sub">Celos / DMG 64i / DMG 60i / iSM</div></div><div class="mc-chk"></div></div>
+  <div class="mc" data-m="mitsubishi" onclick="selMachine(this)"><div class="mc-ico">🔴</div><div><div class="mc-name">Mitsubishi</div><div class="mc-sub">M800S / M80 / M70 / E80</div></div><div class="mc-chk"></div></div>
+  <div class="mc" data-m="haas" onclick="selMachine(this)"><div class="mc-ico">🇺🇸</div><div><div class="mc-name">Haas</div><div class="mc-sub">NGC / Classic NGC / UMC-750</div></div><div class="mc-chk"></div></div>
+  <div class="mc" data-m="mazak" onclick="selMachine(this)"><div class="mc-ico">🔩</div><div><div class="mc-name">Mazak</div><div class="mc-sub">Mazatrol / Smooth X / SmoothG</div></div><div class="mc-chk"></div></div>
+  <div class="mc" data-m="okuma" onclick="selMachine(this)"><div class="mc-ico">🔵</div><div><div class="mc-name">Okuma</div><div class="mc-sub">OSP-P300M / P500M / THINC</div></div><div class="mc-chk"></div></div>
+</div>
+
+<div class="sec">Postprocessor</div>
+<div class="sb">
+  <label class="lbl">Controller</label><select class="sel" id="postCtrl"></select>
+  <label class="lbl">Enhet</label><select class="sel" id="unitSel"><option value="mm">Metrisk — mm</option><option value="inch">Imperial — inch</option></select>
+  <label class="lbl">Koordinatsystem</label><select class="sel"><option>G54 — WP1</option><option>G55 — WP2</option><option>G56 — WP3</option><option>G57 — WP4</option></select>
+  <div class="r2">
+    <div class="iw"><label class="lbl">Säker Z mm</label><input class="inp" type="number" id="safeZ" value="50"></div>
+    <div class="iw"><label class="lbl">Retag mm</label><input class="inp" type="number" id="retract" value="2" step="0.5"></div>
+  </div>
+</div>
+
+<div class="sec">Orientering & Axlar</div>
+<div class="sb">
+  <div class="ori-wrap">
+    <button class="ori-btn act" onclick="selOri('H',this)">↔ Horisontell</button>
+    <button class="ori-btn" onclick="selOri('V',this)">↕ Vertikal</button>
+  </div>
+  <label class="lbl">Bearbetningsplan</label>
+  <select class="sel"><option>G17 — XY-plan</option><option>G18 — XZ-plan</option><option>G19 — YZ-plan</option></select>
+  <label class="lbl">Roterande axel</label>
+  <select class="sel"><option>Ingen</option><option>A-axel</option><option>B-axel</option><option>C-axel</option></select>
+</div>
+
+<div class="sec">Operation — Fräsning</div>
+<div class="sb">
+  <div class="op-grid">
+    <button class="op-btn act" onclick="selOp('fras',this)"><span class="op-ico">🔄</span>Fräs</button>
+    <button class="op-btn" onclick="selOp('plan',this)"><span class="op-ico">▬</span>Plan</button>
+    <button class="op-btn" onclick="selOp('ficka',this)"><span class="op-ico">⬛</span>Ficka</button>
+    <button class="op-btn" onclick="selOp('kontur',this)"><span class="op-ico">〰</span>Kontur</button>
+    <button class="op-btn" onclick="selOp('spiral',this)"><span class="op-ico">🌐</span>Spiral</button>
+    <button class="op-btn" onclick="selOp('gravyr',this)"><span class="op-ico">✍</span>Gravyr</button>
+    <button class="op-btn" onclick="selOp('3d',this)"><span class="op-ico">🧊</span>3D-yta</button>
+  </div>
+  <label class="lbl">Ingångsstrategi</label>
+  <select class="sel" id="entryStrat"><option>Vertikal plunge</option><option>Helix</option><option>Ramp</option><option>Förborrad</option></select>
+</div>
+
+<div class="sec">Borrcyklar</div>
+<div class="sb">
+  <div class="op-grid">
+    <button class="op-btn" onclick="selOp('g81',this)"><span class="op-ico">⬇</span>G81<br><span style="font-size:8px;opacity:.7">Enkel borr</span></button>
+    <button class="op-btn" onclick="selOp('g83',this)"><span class="op-ico">⬇⬇</span>G83<br><span style="font-size:8px;opacity:.7">Peck borr</span></button>
+    <button class="op-btn" onclick="selOp('g73',this)"><span class="op-ico">⚡</span>G73<br><span style="font-size:8px;opacity:.7">HS Peck</span></button>
+    <button class="op-btn" onclick="selOp('g85',this)"><span class="op-ico">💎</span>G85<br><span style="font-size:8px;opacity:.7">Reaming</span></button>
+    <button class="op-btn" onclick="selOp('g76',this)"><span class="op-ico">🎯</span>G76<br><span style="font-size:8px;opacity:.7">Fin borr</span></button>
+    <button class="op-btn" onclick="selOp('g86',this)"><span class="op-ico">⏸</span>G86<br><span style="font-size:8px;opacity:.7">Borr+stopp</span></button>
+    <button class="op-btn" onclick="selOp('g89',this)"><span class="op-ico">⏱</span>G89<br><span style="font-size:8px;opacity:.7">Uppehåll</span></button>
+    <button class="op-btn" onclick="selOp('sankning',this)"><span class="op-ico">🔺</span>Sänk<br><span style="font-size:8px;opacity:.7">Fasborrning</span></button>
+  </div>
+  <div class="r3" style="margin-top:4px">
+    <div class="iw"><label class="lbl">Borrdjup mm</label><input class="inp" type="number" id="drillDepth" value="20" step="0.5" style="margin:0"></div>
+    <div class="iw"><label class="lbl">Peck Q mm</label><input class="inp" type="number" id="drillQ" value="3" step="0.5" style="margin:0"></div>
+    <div class="iw"><label class="lbl">Retag R mm</label><input class="inp" type="number" id="drillR" value="2" step="0.5" style="margin:0"></div>
+  </div>
+  <div class="r2" style="margin-top:8px">
+    <div class="iw"><label class="lbl">Dwell sek</label><input class="inp" type="number" id="drillDwell" value="0.5" step="0.1" style="margin:0"></div>
+    <div class="iw"><label class="lbl">Shift X (G76)</label><input class="inp" type="number" id="drillShift" value="0.1" step="0.05" style="margin:0"></div>
+  </div>
+</div>
+
+<div class="sec">Gängcyklar</div>
+<div class="sb">
+  <div class="op-grid">
+    <button class="op-btn" onclick="selOp('g84',this)"><span class="op-ico">🌀</span>G84<br><span style="font-size:8px;opacity:.7">Rigid tap</span></button>
+    <button class="op-btn" onclick="selOp('g842',this)"><span class="op-ico">🔄</span>G84.2<br><span style="font-size:8px;opacity:.7">Synkron</span></button>
+    <button class="op-btn" onclick="selOp('g74',this)"><span class="op-ico">↩</span>G74<br><span style="font-size:8px;opacity:.7">Vänstergäng</span></button>
+    <button class="op-btn" onclick="selOp('gangfras',this)"><span class="op-ico">🌐</span>Gängfräs<br><span style="font-size:8px;opacity:.7">Helical</span></button>
+  </div>
+  <div class="r3" style="margin-top:4px">
+    <div class="iw"><label class="lbl">Stigning mm</label><input class="inp" type="number" id="tapPitch" value="1.5" step="0.25" style="margin:0"></div>
+    <div class="iw"><label class="lbl">Gängdjup mm</label><input class="inp" type="number" id="tapDepth" value="15" step="0.5" style="margin:0"></div>
+    <div class="iw"><label class="lbl">Gäng-RPM</label><input class="inp" type="number" id="tapRpm" value="500" style="margin:0"></div>
+  </div>
+  <div class="r2" style="margin-top:8px">
+    <div class="iw"><label class="lbl">Gängfräs Ø mm</label><input class="inp" type="number" id="tapMillDia" value="10" step="0.5" style="margin:0"></div>
+    <div class="iw"><label class="lbl">Ingreppsbredd %</label><input class="inp" type="number" id="tapMillAe" value="50" min="10" max="100" style="margin:0"></div>
+  </div>
+</div>
+
+<div class="sec">Skärdata</div>
+<div class="sb">
+  <div class="r2">
+    <div class="iw"><label class="lbl">Spindel RPM</label><input class="inp" type="number" id="rpm" value="3000" onchange="autoCalc()"></div>
+    <div class="iw"><label class="lbl">Vc m/min</label><input class="inp" type="number" id="vc" value="188" onchange="vcToRpm()"></div>
+  </div>
+  <div class="r2">
+    <div class="iw"><label class="lbl">Matning mm/min</label><input class="inp" type="number" id="feed" value="500"></div>
+    <div class="iw"><label class="lbl">fz mm/egg</label><input class="inp" type="number" id="fz" value="0.05" step="0.005"></div>
+  </div>
+  <div class="r3">
+    <div class="iw"><label class="lbl">ap mm</label><input class="inp" type="number" id="ap" value="5" step="0.5"></div>
+    <div class="iw"><label class="lbl">ae mm</label><input class="inp" type="number" id="ae" value="8" step="0.5"></div>
+    <div class="iw"><label class="lbl">Passes</label><input class="inp" type="number" id="passes" value="1" min="1" max="10"></div>
+  </div>
+  <label class="lbl">Kylmedel</label>
+  <select class="sel" id="coolant"><option>AV</option><option selected>Flod (M8)</option><option>Dimma (M7)</option><option>Genomspolning</option><option>Luft</option><option>MMS</option></select>
+</div>
+
+<div class="sec">Ämne & Material</div>
+<div class="sb">
+  <div class="r3">
+    <div class="iw"><label class="lbl">X mm</label><input class="inp" type="number" id="wpX" value="100"></div>
+    <div class="iw"><label class="lbl">Y mm</label><input class="inp" type="number" id="wpY" value="80"></div>
+    <div class="iw"><label class="lbl">Z mm</label><input class="inp" type="number" id="wpZ" value="30"></div>
+  </div>
+  <label class="lbl">Material</label>
+  <select class="sel" id="matSel" onchange="matPreset()">
+    <optgroup label="Aluminium"><option value="al6061">Al 6061-T6</option><option value="al7075">Al 7075-T6</option><option value="alcasting">Al Gjutgods</option></optgroup>
+    <optgroup label="Stål"><option value="s235">Stål S235</option><option value="s355">Stål S355</option><option value="c45">Stål C45</option><option value="tool">Verktygsstål D2</option></optgroup>
+    <optgroup label="Rostfritt"><option value="304">Rostfritt 304</option><option value="316l">Rostfritt 316L</option><option value="duplex">Duplex 2205</option></optgroup>
+    <optgroup label="Special"><option value="ti">Titan Ti-6Al-4V</option><option value="inconel">Inconel 718</option><option value="brass">Mässing CuZn</option><option value="cast">Gjutjärn GJL-250</option><option value="pom">Plast POM/PA</option><option value="cf">Kolfiberkomposit</option></optgroup>
+  </select>
+  <div class="r2">
+    <div class="iw"><label class="lbl">Tolerans</label><select class="sel" style="margin:0"><option>IT7</option><option>IT6</option><option>IT8</option></select></div>
+    <div class="iw"><label class="lbl">Ra ytfinhet</label><select class="sel" style="margin:0"><option>Ra 1.6</option><option>Ra 0.8</option><option>Ra 3.2</option></select></div>
+  </div>
+</div>
+
+<div class="sec">Offsets & Kompensering</div>
+<div class="sb">
+  <label class="lbl">Radiuskompensering</label>
+  <select class="sel"><option>AV (G40)</option><option>Vänster (G41)</option><option>Höger (G42)</option></select>
+  <label class="lbl">Spegla</label>
+  <select class="sel"><option>Ingen</option><option>Spegla X</option><option>Spegla Y</option><option>Spegla XY</option></select>
+  <div class="r2">
+    <div class="iw"><label class="lbl">Skala</label><input class="inp" type="number" value="1.000" step="0.001" style="margin:0"></div>
+    <div class="iw"><label class="lbl">Rotera °</label><input class="inp" type="number" value="0" step="0.1" style="margin:0"></div>
+  </div>
+</div>
+
+</div>
+
+<div class="col" style="border-right:none;">
+<div class="sec">Simulering</div>
+<div class="vp-wrap">
+  <canvas id="simCanvas"></canvas>
+  <div class="vp-info">
+    <div class="chip" id="vpMachine">HEIDENHAIN iTNC 530</div>
+    <div class="chip ok" id="vpCoords">X:0.00 Y:0.00 Z:0.00</div>
+  </div>
+</div>
+<div class="sim-wrap">
+  <button class="sm-btn" onclick="stepSim(-10)">⏮</button>
+  <button class="sm-btn" onclick="stepSim(-1)">◀</button>
+  <button class="sm-btn play" id="playBtn" onclick="togglePlay()">▶ PLAY</button>
+  <button class="sm-btn" onclick="stepSim(1)">▶</button>
+  <button class="sm-btn" onclick="stepSim(10)">⏭</button>
+  <div class="sim-prog"><div class="sim-fill" id="simFill"></div></div>
+  <button class="sm-btn" onclick="resetSim()">↺</button>
+</div>
+<div class="gcode-wrap">
+  <div class="gcode-header">
+    <button class="gtab act" onclick="switchGTab('code',this)">G-Kod</button>
+    <button class="gtab" onclick="switchGTab('ops',this)">Operationer</button>
+    <button class="gtab" onclick="switchGTab('log',this)">Logg</button>
+  </div>
+  <div class="gcode-scroll" id="gcodeScroll">
+    <div class="gc-line"><span class="gc-cm">; Tryck ⚡ Generera NC för att skapa program</span></div>
+  </div>
+</div>
+
+<div class="sec">Hålmönster</div>
+<div class="sb">
+  <label class="lbl">Mönstertyp</label>
+  <select class="sel"><option>Manuell</option><option>Rad</option><option>Grid (matris)</option><option>Cirkulärt</option><option>Bultkrets (BHC)</option></select>
+  <div class="r3">
+    <div class="iw"><label class="lbl">Antal X</label><input class="inp" type="number" value="3" min="1"></div>
+    <div class="iw"><label class="lbl">Antal Y</label><input class="inp" type="number" value="2" min="1"></div>
+    <div class="iw"><label class="lbl">Delning mm</label><input class="inp" type="number" value="30"></div>
+  </div>
+</div>
+</div>
+
+<div class="col">
+<div class="sec">Verktygsbibliotek</div>
+<div class="sb">
+  <div class="tl-filter">
+    <button class="tl-f act" onclick="filterTools('all',this)">Alla</button>
+    <button class="tl-f" onclick="filterTools('mill',this)">Fräsar</button>
+    <button class="tl-f" onclick="filterTools('drill',this)">Borrar</button>
+    <button class="tl-f" onclick="filterTools('tap',this)">Gängar</button>
+  </div>
+  <div id="toolList"></div>
+</div>
+
+<div class="sec">Aktiv Verktygsdata</div>
+<div class="sb">
+  <div class="r2">
+    <div class="iw"><label class="lbl">Ø mm</label><input class="inp" type="number" id="tdDia" value="12"></div>
+    <div class="iw"><label class="lbl">Antal egg</label><input class="inp" type="number" id="tdTeeth" value="4"></div>
+  </div>
+  <div class="r2">
+    <div class="iw"><label class="lbl">Skärlängd mm</label><input class="inp" type="number" id="tdCl" value="26"></div>
+    <div class="iw"><label class="lbl">Tot. längd mm</label><input class="inp" type="number" id="tdTl" value="75"></div>
+  </div>
+  <div class="r2">
+    <div class="iw"><label class="lbl">Skafttyp</label><select class="sel" style="margin:0"><option>Weldon</option><option>Cylindrisk</option><option>Morse</option><option>BT40</option><option>HSK-A63</option></select></div>
+    <div class="iw"><label class="lbl">Beläggning</label><select class="sel" style="margin:0"><option>Ingen</option><option>TiN</option><option>TiAlN</option><option>TiCN</option><option>AlCrN</option><option>DLC</option></select></div>
+  </div>
+</div>
+
+<div class="sec">NC Statistik</div>
+<div class="sb">
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-val" id="stTime">—</div><div class="stat-lbl">Tid min</div></div>
+    <div class="stat-box"><div class="stat-val" id="stDist">—</div><div class="stat-lbl">Bana mm</div></div>
+    <div class="stat-box"><div class="stat-val" id="stLines">0</div><div class="stat-lbl">Rader</div></div>
+    <div class="stat-box"><div class="stat-val" id="stRpm" style="color:var(--a4)">3000</div><div class="stat-lbl">RPM</div></div>
+    <div class="stat-box"><div class="stat-val" id="stFeed" style="color:var(--a2)">500</div><div class="stat-lbl">F mm/min</div></div>
+    <div class="stat-box"><div class="stat-val" id="stTools">1</div><div class="stat-lbl">Verktyg</div></div>
+  </div>
+</div>
+
+<div class="sec">3D-Modell & Filer</div>
+<div class="sb">
+  <div class="drop" id="dropZone">
+    <input type="file" id="fileInput" accept=".stl,.obj,.dxf,.stp,.step,.igs,.iges,.nc,.gcode,.svg" multiple onchange="handleFiles(this.files)">
+    <div class="drop-ico">📦</div>
+    <div class="drop-txt">Klicka eller dra filer hit<br><strong>STL · OBJ · DXF · NC · SVG</strong><br><span style="font-size:9px;color:#3d5570">STP: exportera som STL från CAD</span></div>
+  </div>
+  <div id="fileList"></div>
+</div>
+
+<div class="sec">3D-Visare</div>
+<div class="sb" style="padding:8px;">
+  <div id="viewer3d" style="width:100%;height:220px;background:#07090d;border:1px solid #1f2d40;border-radius:3px;position:relative;overflow:hidden;">
+    <canvas id="canvas3d" style="width:100%;height:100%;display:block;touch-action:none;"></canvas>
+    <div id="viewer3dMsg" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#3d5570;font-family:monospace;text-align:center;pointer-events:none;">
+      Ladda upp STL eller OBJ<br>för att visa 3D-modell
+    </div>
+    <div style="position:absolute;top:6px;right:6px;display:flex;gap:4px;">
+      <button onclick="resetCamera3d()" style="padding:3px 7px;font-size:9px;font-family:monospace;background:#141920;border:1px solid #1f2d40;color:#7a9bb8;border-radius:2px;cursor:pointer;">↺ Reset</button>
+      <button onclick="toggleWire()" style="padding:3px 7px;font-size:9px;font-family:monospace;background:#141920;border:1px solid #1f2d40;color:#7a9bb8;border-radius:2px;cursor:pointer;" id="wireBtn">Wire</button>
+    </div>
+    <div style="position:absolute;bottom:6px;left:6px;font-size:8px;color:#263548;font-family:monospace;">Drag=rotera · Pinch=zoom</div>
+  </div>
+  <div id="modelInfo" style="display:none;margin-top:6px;padding:6px 8px;background:#0f1319;border:1px solid #1f2d40;border-radius:3px;font-family:monospace;font-size:9px;color:#7a9bb8;line-height:1.8;"></div>
+</div>
+
+<div class="sec">Postprocessor Detaljer</div>
+<div class="sb">
+  <label class="lbl">Programnummer</label><input class="inp" type="text" value="O0001">
+  <div class="r2">
+    <div class="iw"><label class="lbl">Linjeinkrement</label><input class="inp" type="number" value="5" min="1" style="margin:0"></div>
+    <div class="iw"><label class="lbl">Decimaler</label><input class="inp" type="number" value="3" min="0" max="6" style="margin:0"></div>
+  </div>
+  <label class="lbl" style="margin-top:8px">Spec. M-koder</label>
+  <input class="inp" type="text" placeholder="t.ex. M200 (palett)">
+</div>
+</div>
+
+</div>
+
+<div class="modal-bg" id="exportModal">
+  <div class="modal">
+    <div class="modal-title">⬇ Exportera NC-Program</div>
+    <div><label class="lbl">Programnamn</label><input class="inp" id="expName" value="PROG_001"></div>
+    <div><label class="lbl">Format</label>
+      <select class="sel" id="expFmt">
+        <option value="nc">.NC — Standard G-kod</option>
+        <option value="h">.H — Heidenhain Klartext</option>
+        <option value="mpf">.MPF — Siemens 840D</option>
+        <option value="txt">.TXT</option>
+        <option value="cnc">.CNC</option>
+      </select>
+    </div>
+    <div><label class="lbl">Kommentar</label><input class="inp" id="expComment" placeholder="Artikel-nr, ritningsnr..."></div>
+    <div style="display:flex;gap:14px;margin-top:4px">
+      <label style="font-size:11px;color:var(--t2);display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="expLineNum" checked> Radnummer</label>
+      <label style="font-size:11px;color:var(--t2);display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="expComments" checked> Kommentarer</label>
+    </div>
+    <div class="modal-acts">
+      <button class="btn-cancel" onclick="closeModal()">Avbryt</button>
+      <button class="btn-ok" onclick="doExport()">Spara fil</button>
+    </div>
+  </div>
+</div>
+<div id="notif"></div>
+
+<script>
+const S={machine:'heidenhain',op:'fras',ori:'H',tool:0,gcLines:[],simPaths:[],simIdx:0,playing:false,playTimer:null,files:[],filter:'all'};
+const POSTS={
+  heidenhain:['Heidenhain iTNC 530 (Klartext)','Heidenhain TNC 640','Heidenhain TNC 7','Heidenhain TNC 320','Heidenhain CNC PILOT 640','Heidenhain DIN/ISO'],
+  fanuc:[
+    // Standard fräsning
+    'Fanuc 0i-MF Plus — Standard fräs',
+    'Fanuc 0i-MF Plus — Nano smoothing',
+    'Fanuc 0i-TF — Svarv',
+    'Fanuc 30i-B — 5-axel fräs',
+    'Fanuc 30i-B — AI contour control',
+    'Fanuc 31i-B5 — Fräs',
+    'Fanuc 32i-B — Fräs',
+    'Fanuc 18i-MB — Fräs',
+    'Fanuc 21i-MB — Fräs',
+    // Subtyper
+    'Fanuc 0i-MF — Rigid tapping',
+    'Fanuc 0i-MF — NURBS interpolation',
+    'Fanuc 30i — High speed machining',
+    'Fanuc Series 16i-MB',
+    'Fanuc Power Motion i-A'
+  ],
+  siemens:[
+    // 840D SL / SP200
+    'Siemens 840D SL — SP200 (standard)',
+    'Siemens 840D SL — SP200 (5-axel TRAORI)',
+    'Siemens 840D SL — CYCLE800 svängning',
+    'Siemens 840D SL — ShopMill',
+    'Siemens 840D SL — High speed (CYCLE832)',
+    'Siemens 840D SL — Manuell Fahrradeln',
+    'Siemens 840D powerline — Standard',
+    // Sinumerik ONE
+    'Sinumerik ONE — Standard fräs',
+    'Sinumerik ONE — 5-axel TRAORI',
+    'Sinumerik ONE — ShopMill',
+    'Sinumerik ONE — High Speed CYCLE832',
+    // 828D
+    'Siemens 828D — ShopMill',
+    'Siemens 828D — Standard G-kod',
+    'Siemens 828D — Rigid tapping',
+    // Lägre serier
+    'Siemens 808D — Fräs',
+    'Siemens 802D sl — Fräs'
+  ],
+  dmg:[
+    // Celos / 840D-baserade
+    'DMG Mori Celos — 840D SL bas',
+    'DMG Mori Celos — Sinumerik ONE bas',
+    'DMG Mori Celos — Fanuc 0i bas',
+    'DMG Mori Celos — 5-axel (TRAORI)',
+    // DMG 64i / 60i
+    'DMG 64i — Standard fräs',
+    'DMG 64i — High speed',
+    'DMG 64i — 5-axel simultant',
+    'DMG 60i — Standard fräs',
+    // Maskinspecifika
+    'DMG DMU 50 — 5-axel',
+    'DMG DMU 80 eVo — 5-axel',
+    'DMG DMF 360 — Horisontell',
+    'DMG NHX 4000 — Horisontell',
+    'DMG CTX beta — Svarvfräs',
+    // iSM / MyVirtual
+    'DMG iSM — Sinumerik ONE',
+    'DMG iSM — Fanuc 30i'
+  ],
+  mitsubishi:[
+    // M800S-serien
+    'Mitsubishi M800S — Standard fräs',
+    'Mitsubishi M800S — 5-axel RTCP',
+    'Mitsubishi M800S — High speed G5',
+    'Mitsubishi M800S — Rigid tapping',
+    'Mitsubishi M800S — Spegel/rotation',
+    // M80-serien
+    'Mitsubishi M80 — Standard fräs',
+    'Mitsubishi M80 — 5-axel',
+    'Mitsubishi M80 — High speed',
+    // M70-serien
+    'Mitsubishi M70 — Standard fräs',
+    'Mitsubishi M70 — Rigid tapping',
+    // E80 / äldre
+    'Mitsubishi E80 — Standard fräs',
+    'Mitsubishi E68 — Fräs (äldre)',
+    'Mitsubishi M730 — Fräs',
+    'Mitsubishi M750 — 5-axel'
+  ],
+  haas:['Haas NGC — Standard fräs','Haas NGC — High speed','Haas Classic NGC','Haas ST-Svarv','Haas UMC-750 5-axel','Haas VF-serie','Haas VM-serie'],
+  mazak:['Mazatrol Matrix 2','Mazatrol Smooth X','Mazatrol SmoothG','Mazak EIA/ISO','Mazak Smooth Technology','Mazak Integrex'],
+  okuma:['Okuma OSP-P300M','Okuma OSP-P500M','Okuma OSP-P300L','Okuma THINC-OSP','Okuma MA-600HII']
+};
+const TOOLS=[
+  {n:'Planfräs Ø80',s:'Z5·HM·IC10',ico:'⭕',g:'mill',dia:80,teeth:5,mat:'HM'},
+  {n:'Planfräs Ø63',s:'Z4·HM·IC8',ico:'⭕',g:'mill',dia:63,teeth:4,mat:'HM'},
+  {n:'Planfräs Ø40',s:'Z3·HM·IC6',ico:'⭕',g:'mill',dia:40,teeth:3,mat:'HM'},
+  {n:'Pinnfräs Ø20',s:'4-egg·HM·L38',ico:'🔵',g:'mill',dia:20,teeth:4,mat:'HM'},
+  {n:'Pinnfräs Ø16',s:'4-egg·HM·L32',ico:'🔵',g:'mill',dia:16,teeth:4,mat:'HM'},
+  {n:'Pinnfräs Ø12',s:'4-egg·HM·L26',ico:'🔵',g:'mill',dia:12,teeth:4,mat:'HM'},
+  {n:'Pinnfräs Ø10',s:'4-egg·HM·L22',ico:'🔵',g:'mill',dia:10,teeth:4,mat:'HM'},
+  {n:'Pinnfräs Ø8',s:'4-egg·HM·L19',ico:'🔵',g:'mill',dia:8,teeth:4,mat:'HM'},
+  {n:'Pinnfräs Ø6',s:'4-egg·HM·L15',ico:'🔵',g:'mill',dia:6,teeth:4,mat:'HM'},
+  {n:'Sfärfräs R10',s:'2-egg·HM',ico:'🟢',g:'mill',dia:20,teeth:2,mat:'HM'},
+  {n:'Sfärfräs R5',s:'2-egg·HM',ico:'🟢',g:'mill',dia:10,teeth:2,mat:'HM'},
+  {n:'Sfärfräs R3',s:'2-egg·HM',ico:'🟢',g:'mill',dia:6,teeth:2,mat:'HM'},
+  {n:'Fasfräs 45° Ø16',s:'4-egg·HM',ico:'◇',g:'mill',dia:16,teeth:4,mat:'HM'},
+  {n:'Graverare 0.5mm',s:'60°·HM',ico:'✍',g:'mill',dia:0.5,teeth:1,mat:'HM'},
+  {n:'T-spårfräs Ø16',s:'Z3·HM·B4',ico:'🔘',g:'mill',dia:16,teeth:3,mat:'HM'},
+  {n:'Borr Ø20',s:'HSS-E·2-egg',ico:'🔩',g:'drill',dia:20,teeth:2,mat:'HSS'},
+  {n:'Borr Ø16',s:'HSS-E·2-egg',ico:'🔩',g:'drill',dia:16,teeth:2,mat:'HSS'},
+  {n:'Borr Ø12',s:'HSS-E·2-egg',ico:'🔩',g:'drill',dia:12,teeth:2,mat:'HSS'},
+  {n:'Borr Ø10',s:'HM·TiAlN',ico:'🔩',g:'drill',dia:10,teeth:2,mat:'HM'},
+  {n:'Borr Ø8.5',s:'HSS-E·M10',ico:'🔩',g:'drill',dia:8.5,teeth:2,mat:'HSS'},
+  {n:'Borr Ø8',s:'HM·Vollhm.',ico:'🔩',g:'drill',dia:8,teeth:2,mat:'HM'},
+  {n:'Borr Ø6.8',s:'HSS-E·M8',ico:'🔩',g:'drill',dia:6.8,teeth:2,mat:'HSS'},
+  {n:'Borr Ø6',s:'HM·TiAlN',ico:'🔩',g:'drill',dia:6,teeth:2,mat:'HM'},
+  {n:'Borr Ø5.1',s:'HSS-E·M6',ico:'🔩',g:'drill',dia:5.1,teeth:2,mat:'HSS'},
+  {n:'Borr Ø4',s:'HSS-E·2-egg',ico:'🔩',g:'drill',dia:4,teeth:2,mat:'HSS'},
+  {n:'Punktborr Ø10',s:'90°·HM',ico:'🎯',g:'drill',dia:10,teeth:2,mat:'HM'},
+  {n:'Gängtapp M24',s:'HSS-E·p=3.0',ico:'🌀',g:'tap',dia:24,pitch:3.0,mat:'HSS'},
+  {n:'Gängtapp M20',s:'HSS-E·p=2.5',ico:'🌀',g:'tap',dia:20,pitch:2.5,mat:'HSS'},
+  {n:'Gängtapp M16',s:'HSS-E·p=2.0',ico:'🌀',g:'tap',dia:16,pitch:2.0,mat:'HSS'},
+  {n:'Gängtapp M12',s:'HSS-E·p=1.75',ico:'🌀',g:'tap',dia:12,pitch:1.75,mat:'HSS'},
+  {n:'Gängtapp M10',s:'HSS-E·p=1.5',ico:'🌀',g:'tap',dia:10,pitch:1.5,mat:'HSS'},
+  {n:'Gängtapp M8',s:'HSS-E·p=1.25',ico:'🌀',g:'tap',dia:8,pitch:1.25,mat:'HSS'},
+  {n:'Gängtapp M6',s:'HSS-E·p=1.0',ico:'🌀',g:'tap',dia:6,pitch:1.0,mat:'HSS'},
+  {n:'Gängtapp M5',s:'HSS-E·p=0.8',ico:'🌀',g:'tap',dia:5,pitch:0.8,mat:'HSS'},
+  {n:'Gängtapp M4',s:'HSS-E·p=0.7',ico:'🌀',g:'tap',dia:4,pitch:0.7,mat:'HSS'},
+  {n:'Gängfräs M10',s:'HM·G41/G42',ico:'🌀',g:'tap',dia:10,pitch:1.5,mat:'HM'},
+  {n:'Brotsch H7 Ø12',s:'HSS·Ø12H7',ico:'💎',g:'drill',dia:12,teeth:6,mat:'HSS'},
+  {n:'Sänkborr Ø20',s:'HM·90°',ico:'🔺',g:'drill',dia:20,teeth:3,mat:'HM'},
+];
+const MAT={
+  al6061:{vc:300,fz:.05},al7075:{vc:280,fz:.05},alcasting:{vc:250,fz:.06},
+  s235:{vc:100,fz:.04},s355:{vc:90,fz:.04},c45:{vc:80,fz:.035},tool:{vc:60,fz:.025},
+  '304':{vc:70,fz:.03},'316l':{vc:65,fz:.025},duplex:{vc:55,fz:.02},
+  ti:{vc:45,fz:.02},inconel:{vc:30,fz:.015},brass:{vc:250,fz:.06},
+  cast:{vc:120,fz:.05},pom:{vc:400,fz:.08},cf:{vc:200,fz:.03}
+};
+
+window.addEventListener('load',()=>{buildToolList();updatePost();resizeCanvas();setupDrop();drawSim();generateCode();});
+window.addEventListener('resize',resizeCanvas);
+
+function filterTools(f,el){document.querySelectorAll('.tl-f').forEach(e=>e.classList.remove('act'));el.classList.add('act');S.filter=f;buildToolList();}
+function buildToolList(){
+  const list=S.filter==='all'?TOOLS:TOOLS.filter(t=>t.g===S.filter);
+  document.getElementById('toolList').innerHTML=list.map(t=>{
+    const i=TOOLS.indexOf(t);
+    return `<div class="ti${i===S.tool?' act':''}" onclick="selTool(${i},this)"><div class="ti-ico">${t.ico}</div><div style="flex:1;min-width:0"><div class="ti-name">${t.n}</div><div class="ti-spec">${t.s}</div></div><div class="ti-mat ${t.mat==='HM'?'hm':'hss'}">${t.mat}</div></div>`;
+  }).join('');
+}
+function selTool(i,el){document.querySelectorAll('.ti').forEach(e=>e.classList.remove('act'));el.classList.add('act');S.tool=i;const t=TOOLS[i];document.getElementById('tdDia').value=t.dia;document.getElementById('tdTeeth').value=t.teeth||2;autoCalc();notify('Verktyg: '+t.n,'inf');}
+function selMachine(el){document.querySelectorAll('.mc').forEach(e=>{e.classList.remove('act');e.querySelector('.mc-chk').textContent='';});el.classList.add('act');el.querySelector('.mc-chk').textContent='✓';S.machine=el.dataset.m;updatePost();notify('Maskin: '+el.querySelector('.mc-name').textContent,'inf');}
+function updatePost(){const s=document.getElementById('postCtrl');s.innerHTML=(POSTS[S.machine]||POSTS.heidenhain).map(p=>`<option>${p}</option>`).join('');document.getElementById('vpMachine').textContent=s.options[0]?.text.toUpperCase()||'';}
+function selOri(d,el){document.querySelectorAll('.ori-btn').forEach(e=>e.classList.remove('act'));el.classList.add('act');S.ori=d;}
+function selOp(op,el){document.querySelectorAll('.op-btn').forEach(e=>e.classList.remove('act'));el.classList.add('act');S.op=op;}
+function matPreset(){const k=document.getElementById('matSel').value;const p=MAT[k];if(!p)return;const t=TOOLS[S.tool];const dia=t?t.dia:12;const rpm=Math.round(p.vc*1000/(Math.PI*dia));document.getElementById('vc').value=p.vc;document.getElementById('rpm').value=rpm;document.getElementById('fz').value=p.fz;document.getElementById('feed').value=Math.round(rpm*p.fz*(t?t.teeth||2:4));notify('Preset: '+document.getElementById('matSel').selectedOptions[0].text,'ok');}
+function autoCalc(){const t=TOOLS[S.tool];const dia=t?t.dia:12;const rpm=parseInt(document.getElementById('rpm').value)||3000;document.getElementById('vc').value=Math.round(Math.PI*dia*rpm/1000);document.getElementById('feed').value=Math.round(rpm*(parseFloat(document.getElementById('fz').value)||.05)*(t?t.teeth||2:4));document.getElementById('stRpm').textContent=rpm;document.getElementById('stFeed').textContent=document.getElementById('feed').value;}
+function vcToRpm(){const t=TOOLS[S.tool];const dia=t?t.dia:12;document.getElementById('rpm').value=Math.round(parseFloat(document.getElementById('vc').value||100)*1000/(Math.PI*dia));autoCalc();}
+
+const f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function progName(){return'FORGE_'+S.machine.substring(0,3).toUpperCase()+'_'+S.op.toUpperCase();}
+
+function buildPaths(op,wpX,wpY,ap,t){
+  const pts=[];const dia=t?t.dia:12;
+  if(op==='fras'||op==='plan'){
+    const step=dia*.65;const rows=Math.ceil(wpY/step);
+    for(let i=0;i<=rows;i++){const y=Math.round(i*(wpY/rows)*100)/100;pts.push({type:'rapid',x:0,y,z:0},{type:'plunge',x:0,y,z:ap},{type:'cut',x:wpX,y,z:ap});}
+  }else if(op==='ficka'){
+    const cx=wpX/2,cy=wpY/2,pw=wpX*.55,ph=wpY*.45;
+    [0,pw/4,pw/2].forEach(off=>{pts.push({type:'rapid',x:cx-pw/2+off,y:cy,z:0},{type:'plunge',x:cx-pw/2+off,y:cy,z:ap},{type:'cut',x:cx+pw/2-off,y:cy,z:ap},{type:'cut',x:cx+pw/2-off,y:cy+ph/2-off,z:ap},{type:'cut',x:cx-pw/2+off,y:cy+ph/2-off,z:ap},{type:'cut',x:cx-pw/2+off,y:cy-ph/2+off,z:ap},{type:'cut',x:cx+pw/2-off,y:cy-ph/2+off,z:ap});});
+  }else if(['borr','g81','g83','g73','g85','g76','g86','g89','sankning'].includes(op)){
+    [[20,20],[50,20],[80,20],[20,50],[50,50],[80,50]].filter(h=>h[0]<wpX&&h[1]<wpY).forEach(([hx,hy])=>pts.push({type:'drill',x:hx,y:hy,z:ap}));
+  }else if(['gang','g84','g842','g74','gangfras'].includes(op)){
+    [[25,20],[60,20],[25,50],[60,50]].filter(h=>h[0]<wpX&&h[1]<wpY).forEach(([hx,hy])=>pts.push({type:'tap',x:hx,y:hy,z:ap}));
+  }else if(op==='kontur'||op==='gravyr'){
+    for(let i=0;i<=12;i++){const x=Math.round((wpX*.1+i*(wpX*.8/12))*100)/100;const y=Math.round((wpY/2+Math.sin(i*Math.PI/3)*wpY*.3)*100)/100;pts.push(i===0?{type:'rapid',x,y,z:0}:{type:'cut',x,y,z:ap});}
+  }else if(op==='spiral'){
+    const cx=wpX/2,cy=wpY/2,r=Math.min(wpX,wpY)/2*.7;
+    for(let i=0;i<=64;i++){const a=i*(Math.PI*2/16),sr=r*(1-i/64*.7);pts.push(i===0?{type:'rapid',x:Math.round((cx+Math.cos(a)*sr)*100)/100,y:Math.round((cy+Math.sin(a)*sr)*100)/100,z:0}:{type:'cut',x:Math.round((cx+Math.cos(a)*sr)*100)/100,y:Math.round((cy+Math.sin(a)*sr)*100)/100,z:ap*(i/64)});}
+  }else if(op==='3d'){
+    for(let r=0;r<=8;r++)for(let c=0;c<=10;c++){const x=Math.round(c/10*wpX*100)/100;const y=Math.round(r/8*wpY*100)/100;const z=Math.abs(Math.round(Math.sin(c/10*Math.PI)*Math.cos(r/8*Math.PI)*ap*100)/100);pts.push(c===0&&r===0?{type:'rapid',x,y,z:0}:{type:'cut',x,y,z});}
+  }else{
+    for(let i=0;i<=8;i++){const x=Math.round(i*(wpX/8)*100)/100;const y=Math.round((wpY/2+Math.sin(i*.9)*wpY*.35)*100)/100;pts.push(i===0?{type:'rapid',x,y,z:0}:{type:'cut',x,y,z:ap});}
+  }
+  return pts;
+}
+
+function generateCode(){
+  const t=TOOLS[S.tool];const rpm=parseInt(document.getElementById('rpm').value)||3000;const feed=parseInt(document.getElementById('feed').value)||500;const ap=parseFloat(document.getElementById('ap').value)||5;const sz=parseFloat(document.getElementById('safeZ').value)||50;const cool=document.getElementById('coolant').value;const wpX=parseFloat(document.getElementById('wpX').value)||100;const wpY=parseFloat(document.getElementById('wpY').value)||80;const mat=document.getElementById('matSel').selectedOptions[0].text;const post=document.getElementById('postCtrl').value||'';const entry=document.getElementById('entryStrat').value;const paths=buildPaths(S.op,wpX,wpY,ap,t);
+  let L=[];
+  const isDrill=['g81','g83','g73','g85','g76','g86','g89','sankning'].includes(S.op);
+  const isTap=['g84','g842','g74','gangfras'].includes(S.op);
+  if(isDrill) L=genDrillCycles(t,rpm,feed,sz,cool,wpX,wpY,mat,post,paths,S.machine);
+  else if(isTap) L=genTapCycles(t,rpm,feed,sz,cool,wpX,wpY,mat,post,paths,S.machine);
+  else if(S.machine==='heidenhain')L=genHH(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,entry,paths);
+  else if(S.machine==='fanuc')L=genFanuc(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,paths);
+  else if(S.machine==='siemens')L=genSiemens(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,paths);
+  else if(S.machine==='dmg')L=genDMG(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,paths);
+  else if(S.machine==='mitsubishi')L=genMitsubishi(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,paths);
+  else if(S.machine==='haas')L=genHaas(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,paths);
+  else L=genFanuc(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,paths);
+  S.gcLines=L;S.simPaths=L.filter(l=>l.pt).map(l=>l.pt);S.simIdx=0;
+  renderGcode();buildSim();calcStats(feed,wpX,wpY);
+  document.getElementById('stLines').textContent=L.length;notify('Genererat — '+L.length+' rader','ok');
+}
+
+function genHH(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,entry,paths){
+  const L=[];const cm=s=>L.push({text:'; '+s,cls:'gc-cm',pt:null});const hd=s=>L.push({text:s,cls:'gc-hd',pt:null});const ln=(num,code,pt=null)=>L.push({num,code,pt});
+  hd('BEGIN PGM '+progName()+' MM');cm('Controller: '+post);cm('Verktyg: '+t.n+' Ø'+t.dia+'mm');cm('Material: '+mat);cm('Op: '+S.op.toUpperCase()+' '+(S.ori==='H'?'HORISONTELL':'VERTIKAL'));L.push({text:'',cls:'',pt:null});
+  ln('0','BLK FORM 0.1 Z X+0 Y+0 Z-'+(ap*2));ln('1','BLK FORM 0.2 X+'+wpX+' Y+'+wpY+' Z+0');ln('2','TOOL CALL '+(S.tool+1)+' Z S'+rpm);ln('3','L Z+'+sz+' FMAX M3',{x:0,y:0,z:sz,tp:'rapid'});
+  if(cool!=='AV')ln('4',cool.includes('Dimma')?'M7':'M8');if(entry==='Helix')ln('5','; HELIX INGÅNG');
+  let n=6;
+  paths.forEach(seg=>{
+    if(seg.type==='rapid')ln(n++,'L X+'+f3(seg.x)+' Y+'+f3(seg.y)+' FMAX',{x:seg.x,y:seg.y,z:sz,tp:'rapid'});
+    else if(seg.type==='plunge')ln(n++,'L Z-'+f3(seg.z)+' F'+Math.round(feed*.3),{x:seg.x,y:seg.y,z:-seg.z,tp:'plunge'});
+    else if(seg.type==='drill'){ln(n++,'CYCL DEF 200 BORING~',null);ln(n++,' Q200=2 Q201=-'+f3(seg.z)+' Q206='+Math.round(feed*.5)+' Q202='+f3(seg.z/2)+' Q210=0 Q203=0 Q204='+sz+' Q211=0',null);ln(n++,'L X+'+f3(seg.x)+' Y+'+f3(seg.y)+' FMAX',{x:seg.x,y:seg.y,z:sz,tp:'rapid'});ln(n++,'CYCL CALL',{x:seg.x,y:seg.y,z:-seg.z,tp:'drill'});}
+    else if(seg.type==='tap'){ln(n++,'CYCL DEF 206 TAPPING NEW~',null);ln(n++,' Q200=2 Q201=-'+f3(seg.z)+' Q206='+(rpm*(t.pitch||1.25))+' Q211=0 Q203=0 Q204='+sz,null);ln(n++,'L X+'+f3(seg.x)+' Y+'+f3(seg.y)+' FMAX M3',{x:seg.x,y:seg.y,z:sz,tp:'rapid'});ln(n++,'CYCL CALL',{x:seg.x,y:seg.y,z:-seg.z,tp:'tap'});}
+    else ln(n++,'L X+'+f3(seg.x)+' Y+'+f3(seg.y)+' Z-'+f3(seg.z||ap)+' F'+feed,{x:seg.x,y:seg.y,z:-(seg.z||ap),tp:'cut'});
+  });
+  ln(n++,'L Z+'+sz+' FMAX M5 M9',{x:0,y:0,z:sz,tp:'rapid'});ln(n++,'M30');hd('END PGM '+progName()+' MM');return L;
+}
+function genFanuc(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,paths){
+  const L=[];const cm=s=>L.push({text:'( '+s+' )',cls:'gc-cm',pt:null});const hd=s=>L.push({text:s,cls:'gc-hd',pt:null});const ln=(code,pt=null)=>L.push({code,pt});
+  hd('%');hd('O'+String(S.tool+1001).padStart(4,'0'));cm('CTRL: '+post);cm('T'+(S.tool+1)+' '+t.n+' D'+t.dia);cm('MAT: '+mat);L.push({text:'',cls:'',pt:null});
+  ln('G21 G17 G40 G49 G80 G90');ln('T'+(S.tool+1)+' M06');ln('G43 H'+(S.tool+1)+' Z'+sz+'.');ln('S'+rpm+' M03');if(cool!=='AV')ln(cool.includes('Dimma')?'M07':'M08');
+  paths.forEach(seg=>{
+    if(seg.type==='rapid')ln('G00 X'+f3(seg.x)+' Y'+f3(seg.y),{x:seg.x,y:seg.y,z:sz,tp:'rapid'});
+    else if(seg.type==='plunge')ln('G01 Z-'+f3(seg.z)+' F'+Math.round(feed*.3),{x:seg.x,y:seg.y,z:-seg.z,tp:'plunge'});
+    else if(seg.type==='drill'){ln('G83 X'+f3(seg.x)+' Y'+f3(seg.y)+' Z-'+f3(seg.z)+' R2. Q'+f3(seg.z/3)+' F'+Math.round(feed*.5),{x:seg.x,y:seg.y,z:-seg.z,tp:'drill'});ln('G80');}
+    else if(seg.type==='tap'){ln('G84 X'+f3(seg.x)+' Y'+f3(seg.y)+' Z-'+f3(seg.z)+' R2. F'+(rpm*(t.pitch||1.25)).toFixed(0),{x:seg.x,y:seg.y,z:-seg.z,tp:'tap'});ln('G80');}
+    else ln('G01 X'+f3(seg.x)+' Y'+f3(seg.y)+' Z-'+f3(seg.z||ap)+' F'+feed,{x:seg.x,y:seg.y,z:-(seg.z||ap),tp:'cut'});
+  });
+  ln('G00 Z'+sz+'. M05 M09');ln('G28 G91 Z0.');ln('M30');hd('%');return L;
+}
+function genSiemens(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,paths){
+  const L=[];const cm=s=>L.push({text:';'+s,cls:'gc-cm',pt:null});const hd=s=>L.push({text:s,cls:'gc-hd',pt:null});const ln=(code,pt=null)=>L.push({code,pt});
+  hd(';'+progName()+'.MPF');cm('Ctrl: '+post);cm('Vkt: '+t.n);cm('Mat: '+mat);L.push({text:'',cls:'',pt:null});
+  ln('G71 G90 G17 DIAMOF');ln('T'+(S.tool+1)+' D1');ln('M06');ln('SPOS='+rpm);ln('G00 Z'+sz+' M03');if(cool!=='AV')ln('M08');
+  paths.forEach(seg=>{
+    if(seg.type==='rapid')ln('G00 X'+f3(seg.x)+' Y'+f3(seg.y),{x:seg.x,y:seg.y,z:sz,tp:'rapid'});
+    else if(seg.type==='plunge')ln('G01 Z-'+f3(seg.z)+' F'+Math.round(feed*.3),{x:seg.x,y:seg.y,z:-seg.z,tp:'plunge'});
+    else if(seg.type==='drill'){ln('CYCLE81('+sz+',0,2,-'+f3(seg.z)+')',null);ln('G00 X'+f3(seg.x)+' Y'+f3(seg.y),{x:seg.x,y:seg.y,z:-seg.z,tp:'drill'});}
+    else if(seg.type==='tap'){ln('CYCLE84('+sz+',0,2,-'+f3(seg.z)+',,,'+rpm+','+(t.pitch||1.25)+',1)',null);ln('G00 X'+f3(seg.x)+' Y'+f3(seg.y),{x:seg.x,y:seg.y,z:-seg.z,tp:'tap'});}
+    else ln('G01 X'+f3(seg.x)+' Y'+f3(seg.y)+' Z-'+f3(seg.z||ap)+' F='+feed,{x:seg.x,y:seg.y,z:-(seg.z||ap),tp:'cut'});
+  });
+  ln('G00 Z'+sz+' M05 M09');ln('M30');return L;
+}
+function genHaas(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,paths){
+  const L=[];const cm=s=>L.push({text:'( '+s+' )',cls:'gc-cm',pt:null});const hd=s=>L.push({text:s,cls:'gc-hd',pt:null});const ln=(code,pt=null)=>L.push({code,pt});
+  hd('%');hd('O00001 ( '+progName()+' )');cm('HAAS: '+post);cm('T'+(S.tool+1)+' - '+t.n);
+  ln('G00 G17 G40 G49 G80 G90');ln('T'+(S.tool+1)+' M06');ln('G00 G90 G54 X0. Y0. S'+rpm+' M03');ln('G43 Z'+sz+'. H'+(S.tool+1));if(cool!=='AV')ln('M08');
+  paths.forEach(seg=>{
+    if(seg.type==='rapid')ln('G00 X'+f3(seg.x)+' Y'+f3(seg.y),{x:seg.x,y:seg.y,z:sz,tp:'rapid'});
+    else if(seg.type==='plunge')ln('G01 Z-'+f3(seg.z)+' F'+Math.round(feed*.3),{x:seg.x,y:seg.y,z:-seg.z,tp:'plunge'});
+    else if(seg.type==='drill'){ln('G81 X'+f3(seg.x)+' Y'+f3(seg.y)+' Z-'+f3(seg.z)+' R.1 F'+Math.round(feed*.5),{x:seg.x,y:seg.y,z:-seg.z,tp:'drill'});ln('G80');}
+    else if(seg.type==='tap'){ln('G84 X'+f3(seg.x)+' Y'+f3(seg.y)+' Z-'+f3(seg.z)+' R.1 F'+(rpm*(t.pitch||1.25)).toFixed(0),{x:seg.x,y:seg.y,z:-seg.z,tp:'tap'});ln('G80');}
+    else ln('G01 X'+f3(seg.x)+' Y'+f3(seg.y)+' Z-'+f3(seg.z||ap)+' F'+feed,{x:seg.x,y:seg.y,z:-(seg.z||ap),tp:'cut'});
+  });
+  ln('G00 Z'+sz+'.');ln('M05 M09');ln('G28 G91 Z0. M30');hd('%');return L;
+}
+
+function colorize(code,m){
+  let s=esc(code);
+  if(m==='heidenhain'){
+    s=s.replace(/\b(TOOL CALL|BLK FORM|CYCL DEF|CYCL CALL|BEGIN PGM|END PGM|SPOS)\b/g,'<span class="gc-k">$1</span>');
+    s=s.replace(/\b(M[0-9]+)\b/g,'<span class="gc-s">$1</span>');
+    s=s.replace(/\bL\b/g,'<span class="gc-k">L</span>');
+    s=s.replace(/X\+?([\d.]+)/g,'<span class="gc-x">X+$1</span>');
+    s=s.replace(/Y\+?([\d.]+)/g,'<span class="gc-y">Y+$1</span>');
+    s=s.replace(/Z[+-]?([\d.]+)/g,'<span class="gc-z">Z$1</span>');
+    s=s.replace(/\bF([\d.]+)/g,'<span class="gc-f">F$1</span>');
+    s=s.replace(/\bS([\d]+)/g,'<span class="gc-s">S$1</span>');
+  }else{
+    s=s.replace(/\b(G00|G01|G02|G03|G17|G21|G28|G40|G41|G43|G49|G54|G80|G81|G83|G84|G90|G91|CYCLE[0-9]+|SPOS|DIAMOF)\b/g,'<span class="gc-k">$1</span>');
+    s=s.replace(/\b(M[0-9]+)\b/g,'<span class="gc-s">$1</span>');
+    s=s.replace(/X([-\d.]+)/g,'<span class="gc-x">X$1</span>');
+    s=s.replace(/Y([-\d.]+)/g,'<span class="gc-y">Y$1</span>');
+    s=s.replace(/Z([-\d.]+)/g,'<span class="gc-z">Z$1</span>');
+    s=s.replace(/\bF([\d.]+)/g,'<span class="gc-f">F$1</span>');
+    s=s.replace(/\bS([\d]+)/g,'<span class="gc-s">S$1</span>');
+  }
+  return s;
+}
+function renderGcode(){
+  const el=document.getElementById('gcodeScroll');
+  el.innerHTML=S.gcLines.map((l,i)=>{
+    if(l.text!==undefined)return'<div class="gc-line"><span class="'+(l.cls||'gc-cm')+'">'+esc(l.text)+'</span></div>';
+    return'<div class="gc-line"><span class="gc-n">'+(l.num||i)+'</span><span>'+colorize(l.code||'',S.machine)+'</span></div>';
+  }).join('');
+  setTimeout(()=>{el.scrollTop=el.scrollHeight;},50);
+}
+function switchGTab(tab,el){
+  document.querySelectorAll('.gtab').forEach(e=>e.classList.remove('act'));el.classList.add('act');
+  const sc=document.getElementById('gcodeScroll');
+  if(tab==='log'){sc.innerHTML='<div class="gc-line"><span class="gc-cm">; CNC·FORGE Log</span></div><div class="gc-line"><span class="gc-hd">[OK]</span><span style="color:var(--t2);margin-left:8px">'+S.machine+' / '+document.getElementById('postCtrl').value+'</span></div><div class="gc-line"><span class="gc-hd">[OK]</span><span style="color:var(--t2);margin-left:8px">T'+(S.tool+1)+' '+TOOLS[S.tool].n+'</span></div><div class="gc-line"><span class="gc-hd">[OK]</span><span style="color:var(--t2);margin-left:8px">Rader: '+S.gcLines.length+'</span></div>';}
+  else if(tab==='ops'){sc.innerHTML='<div class="gc-line"><span class="gc-cm">; Operationssekvens</span></div><div class="gc-line"><span class="gc-k">OP 10</span><span style="color:var(--t2);margin-left:10px">Setup — G54</span></div><div class="gc-line"><span class="gc-k">OP 20</span><span style="color:var(--t2);margin-left:10px">T'+(S.tool+1)+' '+TOOLS[S.tool].n+' — '+S.op.toUpperCase()+'</span></div><div class="gc-line"><span class="gc-k">OP 30</span><span style="color:var(--t2);margin-left:10px">M30</span></div>';}
+  else renderGcode();
+}
+
+const canvas=document.getElementById('simCanvas');const ctx=canvas.getContext('2d');
+function resizeCanvas(){const vp=canvas.parentElement;canvas.width=vp.clientWidth;canvas.height=vp.clientHeight;drawSim();}
+function buildSim(){S.simPaths=S.gcLines.filter(l=>l.pt).map(l=>l.pt);S.simIdx=0;drawSim();}
+function drawSim(){
+  const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(26,33,48,.6)';ctx.lineWidth=.5;
+  for(let x=0;x<W;x+=30){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=30){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  if(!S.simPaths.length){ctx.font='11px monospace';ctx.fillStyle='#1f2d40';ctx.textAlign='center';ctx.fillText('⚡ Tryck Generera NC',W/2,H/2);return;}
+  const wpX=parseFloat(document.getElementById('wpX').value)||100;const wpY=parseFloat(document.getElementById('wpY').value)||80;
+  const pad=44,sc=Math.min((W-pad*2)/wpX,(H-pad*2)/wpY);const ox=(W-wpX*sc)/2,oy=(H-wpY*sc)/2;
+  const tx=x=>ox+x*sc,ty=y=>oy+(wpY-y)*sc;
+  ctx.fillStyle='rgba(14,19,28,.95)';ctx.fillRect(ox,oy,wpX*sc,wpY*sc);
+  ctx.strokeStyle='rgba(31,45,64,.9)';ctx.lineWidth=1.5;ctx.strokeRect(ox,oy,wpX*sc,wpY*sc);
+  ctx.font='8px monospace';ctx.fillStyle='#2a3d52';ctx.textAlign='center';
+  for(let v=0;v<=wpX;v+=20)ctx.fillText(v,tx(v),oy+wpY*sc+12);
+  ctx.textAlign='right';for(let v=0;v<=wpY;v+=20)ctx.fillText(v,ox-4,ty(v)+3);
+  const until=Math.min(S.simIdx,S.simPaths.length);let lx=0,ly=wpY;
+  S.simPaths.forEach((pt,i)=>{
+    if(i>=until)return;
+    ctx.beginPath();ctx.moveTo(tx(lx),ty(ly));ctx.lineTo(tx(pt.x),ty(pt.y));
+    if(pt.tp==='rapid'){ctx.strokeStyle='rgba(0,200,255,.3)';ctx.lineWidth=.8;ctx.setLineDash([4,5]);}
+    else if(pt.tp==='cut'){ctx.strokeStyle='rgba(0,232,122,'+(0.4+i/Math.max(1,until)*.55)+')';ctx.lineWidth=2;ctx.setLineDash([]);}
+    else if(pt.tp==='plunge'){ctx.strokeStyle='rgba(255,225,53,.6)';ctx.lineWidth=1.2;ctx.setLineDash([2,3]);}
+    else{ctx.stroke();ctx.setLineDash([]);const r=Math.max(2,(TOOLS[S.tool].dia/2)*sc*.5);ctx.beginPath();ctx.arc(tx(pt.x),ty(pt.y),r,0,Math.PI*2);ctx.strokeStyle=pt.tp==='tap'?'rgba(255,119,0,.7)':'rgba(196,107,255,.7)';ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle=pt.tp==='tap'?'rgba(255,119,0,.1)':'rgba(196,107,255,.1)';ctx.fill();}
+    ctx.stroke();ctx.setLineDash([]);lx=pt.x;ly=pt.y;
+  });
+  if(until>0){const p=S.simPaths[until-1];const cx=tx(p.x),cy=ty(p.y),r=Math.max(5,(TOOLS[S.tool].dia/2)*sc*.45);ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle='rgba(255,225,53,.12)';ctx.fill();ctx.strokeStyle='rgba(255,225,53,.9)';ctx.lineWidth=1.5;ctx.stroke();ctx.beginPath();ctx.arc(cx,cy,2.5,0,Math.PI*2);ctx.fillStyle='#ffe135';ctx.fill();document.getElementById('vpCoords').textContent='X:'+p.x.toFixed(2)+' Y:'+p.y.toFixed(2)+' Z:'+(p.z||0).toFixed(2);document.getElementById('simFill').style.width=(until/S.simPaths.length*100)+'%';}
+}
+function togglePlay(){S.playing=!S.playing;const btn=document.getElementById('playBtn');btn.textContent=S.playing?'⏸ PAUSE':'▶ PLAY';btn.classList.toggle('play',S.playing);if(S.playing){if(S.simIdx>=S.simPaths.length)S.simIdx=0;S.playTimer=setInterval(()=>{S.simIdx++;if(S.simIdx>=S.simPaths.length){S.playing=false;btn.textContent='▶ PLAY';btn.classList.remove('play');clearInterval(S.playTimer);}drawSim();},50);}else clearInterval(S.playTimer);}
+function stepSim(n){S.simIdx=Math.max(0,Math.min(S.simPaths.length,S.simIdx+n));drawSim();}
+function runSim(){resetSim();togglePlay();}
+function resetSim(){clearInterval(S.playTimer);S.playing=false;document.getElementById('playBtn').textContent='▶ PLAY';document.getElementById('playBtn').classList.remove('play');S.simIdx=0;document.getElementById('simFill').style.width='0%';document.getElementById('vpCoords').textContent='X:0.00 Y:0.00 Z:0.00';drawSim();}
+function calcStats(feed,wpX,wpY){const pts=S.simPaths;const d=pts.reduce((s,p,i)=>i===0?s:s+Math.sqrt((p.x-pts[i-1].x)**2+(p.y-pts[i-1].y)**2),0);document.getElementById('stDist').textContent=Math.round(d);document.getElementById('stTime').textContent=(d/feed).toFixed(1);document.getElementById('stRpm').textContent=document.getElementById('rpm').value;document.getElementById('stFeed').textContent=document.getElementById('feed').value;}
+function setupDrop(){const dz=document.getElementById('dropZone');dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});dz.addEventListener('dragleave',()=>dz.classList.remove('over'));dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');handleFiles(e.dataTransfer.files);});}
+function handleFiles(files){
+  Array.from(files).forEach(f=>{
+    const ext=f.name.split('.').pop().toLowerCase();
+    S.files.push({name:f.name,ext,size:f.size,file:f});
+    if(['stl','obj'].includes(ext)) load3dModel(f);
+  });
+  renderFiles();
+  notify(files.length+' fil(er) inlästa','ok');
+}
+function renderFiles(){document.getElementById('fileList').innerHTML=S.files.map((f,i)=>'<div class="fc"><span class="fc-badge '+(['dxf','svg'].includes(f.ext)?'b-dxf':['stp','step','igs','iges'].includes(f.ext)?'b-stp':'b-nc')+'">'+f.ext.toUpperCase()+'</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+f.name+'</span><span style="font-size:9px;color:var(--t3)">'+(f.size/1024).toFixed(1)+'KB</span><span class="fc-rm" onclick="S.files.splice('+i+',1);renderFiles()">✕</span></div>').join('');}
+function openExport(){if(!S.gcLines.length){notify('Generera program först!','wrn');return;}document.getElementById('exportModal').classList.add('open');}
+function closeModal(){document.getElementById('exportModal').classList.remove('open');}
+function doExport(){const name=document.getElementById('expName').value||'PROG_001';const fmt=document.getElementById('expFmt').value;const comment=document.getElementById('expComment').value;const lineNum=document.getElementById('expLineNum').checked;const inclCom=document.getElementById('expComments').checked;let content='';if(comment)content+='; '+comment+'\n';content+=S.gcLines.map(l=>{if(l.text!==undefined)return inclCom||l.cls==='gc-hd'?l.text:'';return(lineNum&&l.num?l.num+' ':'')+(l.code||'');}).filter(Boolean).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:'text/plain'}));a.download=name+'.'+fmt;a.click();closeModal();notify('Exporterat: '+name+'.'+fmt,'ok');}
+
+// ═══════════════════════════════════════
+// BORR- & GÄNGCYKEL GENERATOR
+// ═══════════════════════════════════════
+function getCycleParams() {
+  return {
+    depth: parseFloat(document.getElementById('drillDepth')?.value)||20,
+    Q:     parseFloat(document.getElementById('drillQ')?.value)||3,
+    R:     parseFloat(document.getElementById('drillR')?.value)||2,
+    dwell: parseFloat(document.getElementById('drillDwell')?.value)||0.5,
+    shift: parseFloat(document.getElementById('drillShift')?.value)||0.1,
+    pitch: parseFloat(document.getElementById('tapPitch')?.value)||1.5,
+    tapDepth: parseFloat(document.getElementById('tapDepth')?.value)||15,
+    tapRpm:   parseInt(document.getElementById('tapRpm')?.value)||500,
+    millDia:  parseFloat(document.getElementById('tapMillDia')?.value)||10,
+    millAe:   parseFloat(document.getElementById('tapMillAe')?.value)||50,
+  };
+}
+
+function genDrillCycles(t,rpm,feed,sz,cool,wpX,wpY,mat,post,paths,machine) {
+  const op=S.op; const cp=getCycleParams();
+  const depth=cp.depth; const Q=cp.Q; const R=cp.R;
+  const L=[]; 
+  const isSiemens=machine==='siemens'||machine==='dmg';
+  const isHH=machine==='heidenhain';
+  const cm=s=>L.push({text:(isHH?'; ':'( ')+s+(isHH?'':' )'),cls:'gc-cm',pt:null});
+  const hd=s=>L.push({text:s,cls:'gc-hd',pt:null});
+  const ln=(code,pt=null)=>L.push({code,pt});
+
+  // Header
+  if(isHH) {
+    hd('BEGIN PGM '+progName()+' MM');
+    cm('Borrcykel: '+op.toUpperCase()+' — '+post);
+    cm('Verktyg: T'+(S.tool+1)+' '+t.n+' Ø'+t.dia+'mm');
+    ln('0','BLK FORM 0.1 Z X+0 Y+0 Z-'+(depth+5));
+    ln('1','BLK FORM 0.2 X+'+wpX+' Y+'+wpY+' Z+0');
+    ln('2','TOOL CALL '+(S.tool+1)+' Z S'+rpm);
+    ln('3','L Z+'+sz+' FMAX M3',{x:0,y:0,z:sz,tp:'rapid'});
+    if(cool!=='AV') ln('4','M8');
+  } else if(isSiemens) {
+    hd(';'+progName()+'.MPF');
+    cm('Borrcykel: '+op.toUpperCase()+' — '+post);
+    ln('G71 G90 G17'); ln('T='+(S.tool+1)+' D1 M06');
+    ln('SPOS='+rpm); ln('G00 Z'+sz+' M03');
+    if(cool!=='AV') ln('M08');
+  } else {
+    hd('%'); hd('O'+String(S.tool+1001).padStart(4,'0'));
+    cm('BORRCYKEL: '+op.toUpperCase()+' — '+post);
+    cm('T'+(S.tool+1)+' '+t.n+' D'+t.dia);
+    ln('G21 G17 G40 G49 G80 G90');
+    ln('T'+(S.tool+1)+' M06');
+    ln('G43 H'+(S.tool+1)+' Z'+sz+'.');
+    ln('S'+rpm+' M03');
+    if(cool!=='AV') ln('M08');
+  }
+
+  // Cycle definition per operation
+  const holes = paths.filter(p=>p.type==='drill'||p.type==='tap');
+  
+  holes.forEach((h,i) => {
+    // Rapid to hole
+    if(isHH) {
+      // Heidenhain CYCL DEF per cycle type
+      let cycleDef='';
+      if(op==='g81') cycleDef=`CYCL DEF 200 DRILLING~ Q200=2 Q201=-${f3(depth)} Q206=${Math.round(feed*.5)} Q202=${f3(depth)} Q210=0 Q203=0 Q204=${sz} Q211=0`;
+      else if(op==='g83') cycleDef=`CYCL DEF 200 DRILLING~ Q200=2 Q201=-${f3(depth)} Q206=${Math.round(feed*.5)} Q202=${f3(Q)} Q210=0 Q203=0 Q204=${sz} Q211=0`;
+      else if(op==='g73') cycleDef=`CYCL DEF 200 DRILLING~ Q200=2 Q201=-${f3(depth)} Q206=${feed} Q202=${f3(Q)} Q210=0 Q203=0 Q204=${sz} Q211=0`;
+      else if(op==='g85') cycleDef=`CYCL DEF 201 REAMING~ Q200=2 Q201=-${f3(depth)} Q206=${Math.round(feed*.3)} Q211=${cp.dwell} Q208=${feed} Q203=0 Q204=${sz}`;
+      else if(op==='g76') cycleDef=`CYCL DEF 204 BACK BORING~ Q200=2 Q249=-${f3(depth)} Q250=${f3(depth+10)} Q251=${f3(cp.shift)} Q252=0 Q253=${feed} Q254=${Math.round(feed*.3)} Q255=0`;
+      else if(op==='g86') cycleDef=`CYCL DEF 202 BORING~ Q200=2 Q201=-${f3(depth)} Q206=${Math.round(feed*.3)} Q211=${cp.dwell} Q208=600 Q203=0 Q204=${sz} Q214=1 Q336=0`;
+      else if(op==='g89') cycleDef=`CYCL DEF 202 BORING~ Q200=2 Q201=-${f3(depth)} Q206=${Math.round(feed*.3)} Q211=${cp.dwell} Q208=${feed} Q203=0 Q204=${sz} Q214=0 Q336=0`;
+      else if(op==='sankning') cycleDef=`CYCL DEF 200 DRILLING~ Q200=2 Q201=-${f3(depth*.3)} Q206=${Math.round(feed*.4)} Q202=${f3(depth*.3)} Q210=0 Q203=0 Q204=${sz} Q211=0`;
+      if(i===0) ln(String(10+i*10), cycleDef, null);
+      ln(String(20+i*10), `L X+${f3(h.x)} Y+${f3(h.y)} FMAX`, {x:h.x,y:h.y,z:sz,tp:'rapid'});
+      ln(String(30+i*10), 'CYCL CALL', {x:h.x,y:h.y,z:-depth,tp:'drill'});
+    } else if(isSiemens) {
+      // Siemens CYCLE
+      let cyc='';
+      if(op==='g81') cyc=`CYCLE81(${sz},0,${R},-${f3(depth)},)`;
+      else if(op==='g83') cyc=`CYCLE83(${sz},0,${R},-${f3(depth)},,-${f3(Q)},${Math.round(feed*.5)},1,0,0,1,1)`;
+      else if(op==='g73') cyc=`CYCLE83(${sz},0,${R},-${f3(depth)},,${f3(Q)},${feed},1,0,0,1,1)`;
+      else if(op==='g85') cyc=`CYCLE85(${sz},0,${R},-${f3(depth)},,${Math.round(feed*.3)},${Math.round(feed*.5)})`;
+      else if(op==='g76') cyc=`CYCLE76(${sz},0,${R},-${f3(depth)},,${Math.round(feed*.3)},${cp.dwell},${cp.shift})`;
+      else if(op==='g86') cyc=`CYCLE86(${sz},0,${R},-${f3(depth)},,${Math.round(feed*.3)},${cp.dwell},1,${cp.shift})`;
+      else if(op==='g89') cyc=`CYCLE82(${sz},0,${R},-${f3(depth)},,${cp.dwell})`;
+      else if(op==='sankning') cyc=`CYCLE81(${sz},0,${R},-${f3(depth*.3)},)`;
+      ln(`G00 X${f3(h.x)} Y${f3(h.y)}`, {x:h.x,y:h.y,z:sz,tp:'rapid'});
+      if(i===0) ln(cyc, null);
+      ln('MCALL', {x:h.x,y:h.y,z:-depth,tp:'drill'});
+    } else {
+      // Fanuc/Haas/Mitsubishi G-koder
+      let cyc='';
+      const feedDrill=Math.round(feed*.5);
+      if(op==='g81') cyc=`G81 X${f3(h.x)} Y${f3(h.y)} Z-${f3(depth)} R${R}. F${feedDrill}`;
+      else if(op==='g83') cyc=`G83 X${f3(h.x)} Y${f3(h.y)} Z-${f3(depth)} R${R}. Q${f3(Q)} F${feedDrill}`;
+      else if(op==='g73') cyc=`G73 X${f3(h.x)} Y${f3(h.y)} Z-${f3(depth)} R${R}. Q${f3(Q)} F${feed}`;
+      else if(op==='g85') cyc=`G85 X${f3(h.x)} Y${f3(h.y)} Z-${f3(depth)} R${R}. F${Math.round(feed*.3)}`;
+      else if(op==='g76') cyc=`G76 X${f3(h.x)} Y${f3(h.y)} Z-${f3(depth)} R${R}. Q${f3(cp.shift*1000)} F${Math.round(feed*.3)}`;
+      else if(op==='g86') cyc=`G86 X${f3(h.x)} Y${f3(h.y)} Z-${f3(depth)} R${R}. F${Math.round(feed*.3)}`;
+      else if(op==='g89') cyc=`G89 X${f3(h.x)} Y${f3(h.y)} Z-${f3(depth)} R${R}. P${Math.round(cp.dwell*1000)} F${Math.round(feed*.3)}`;
+      else if(op==='sankning') cyc=`G82 X${f3(h.x)} Y${f3(h.y)} Z-${f3(depth*.3)} R${R}. P${Math.round(cp.dwell*1000)} F${Math.round(feed*.4)}`;
+      ln(cyc, {x:h.x,y:h.y,z:-depth,tp:'drill'});
+    }
+  });
+
+  // Close cycle + end
+  if(isHH) { ln(String(90+holes.length*10),'L Z+'+sz+' FMAX M5 M9',{x:0,y:0,z:sz,tp:'rapid'}); ln('99','M30'); hd('END PGM '+progName()+' MM'); }
+  else if(isSiemens) { ln('G00 Z'+sz); ln('MCALL'); ln('M05 M09'); ln('M30'); }
+  else { ln('G80'); ln('G00 Z'+sz+'. M05 M09'); ln('G28 G91 Z0.'); ln('M30'); hd('%'); }
+  return L;
+}
+
+function genTapCycles(t,rpm,feed,sz,cool,wpX,wpY,mat,post,paths,machine) {
+  const op=S.op; const cp=getCycleParams();
+  const pitch=cp.pitch; const depth=cp.tapDepth; const tapRpm=cp.tapRpm;
+  const tapFeed=Math.round(tapRpm*pitch);
+  const L=[];
+  const isHH=machine==='heidenhain';
+  const isSiemens=machine==='siemens'||machine==='dmg';
+  const cm=s=>L.push({text:(isHH?'; ':'( ')+s+(isHH?'':' )'),cls:'gc-cm',pt:null});
+  const hd=s=>L.push({text:s,cls:'gc-hd',pt:null});
+  const ln=(code,pt=null)=>L.push({code,pt});
+
+  if(isHH) {
+    hd('BEGIN PGM '+progName()+' MM');
+    cm('Gängcykel: '+op.toUpperCase()+' stigning='+pitch+'mm');
+    ln('0','TOOL CALL '+(S.tool+1)+' Z S'+tapRpm);
+    ln('1','L Z+'+sz+' FMAX M3',{x:0,y:0,z:sz,tp:'rapid'});
+    if(cool!=='AV') ln('2','M8');
+  } else if(isSiemens) {
+    hd(';'+progName()+'.MPF');
+    cm('Gängcykel: '+op.toUpperCase()+' P='+pitch);
+    ln('G71 G90 G17'); ln('T='+(S.tool+1)+' D1 M06');
+    ln('SPOS='+tapRpm); ln('G00 Z'+sz+' M03');
+    if(cool!=='AV') ln('M08');
+  } else {
+    hd('%'); hd('O'+String(S.tool+2001).padStart(4,'0'));
+    cm('GÄNGCYKEL: '+op.toUpperCase()+' P='+pitch+'mm');
+    ln('G21 G17 G40 G49 G80 G90');
+    ln('T'+(S.tool+1)+' M06');
+    ln('G43 H'+(S.tool+1)+' Z'+sz+'.');
+    ln('S'+tapRpm+(op==='g74'?' M04':' M03'));
+    if(cool!=='AV') ln('M08');
+  }
+
+  const holes=paths.filter(p=>p.type==='tap');
+
+  if(op==='gangfras') {
+    // Gängfräs — helical interpolation G02/G03
+    const millDia=cp.millDia; const ae=cp.millAe/100;
+    const helixR=(t.dia/2)-(millDia/2);
+    if(isHH) ln('3','CYCL DEF 262 THREAD MILLING~ Q335='+t.dia+' Q239='+pitch+' Q201=-'+f3(depth)+' Q355=1 Q253=750 Q351=1 Q200=2 Q203=0 Q204='+sz,null);
+    else if(isSiemens) ln('CYCLE70('+sz+',0,2,-'+f3(depth)+','+pitch+','+f3(helixR)+',1,0,0)',null);
+    holes.forEach(h=>{
+      if(isHH){ ln('PLANE RESET STAY',null); ln(`L X+${f3(h.x)} Y+${f3(h.y)} FMAX`,{x:h.x,y:h.y,z:sz,tp:'rapid'}); ln('CYCL CALL',{x:h.x,y:h.y,z:-depth,tp:'tap'}); }
+      else if(isSiemens){ ln(`G00 X${f3(h.x)} Y${f3(h.y)}`,{x:h.x,y:h.y,z:sz,tp:'rapid'}); ln('MCALL',{x:h.x,y:h.y,z:-depth,tp:'tap'}); }
+      else {
+        // Fanuc helical G02
+        ln(`G00 X${f3(h.x)} Y${f3(h.y)}`,{x:h.x,y:h.y,z:sz,tp:'rapid'});
+        ln(`G01 Z2. F${Math.round(feed*.3)}`);
+        ln(`G01 X${f3(h.x+helixR)} F${feed}`);
+        ln(`G02 X${f3(h.x+helixR)} Y${f3(h.y)} Z-${f3(depth)} I-${f3(helixR)} J0 F${feed}`,{x:h.x,y:h.y,z:-depth,tp:'tap'});
+        ln(`G02 X${f3(h.x+helixR)} Y${f3(h.y)} I-${f3(helixR)} J0`);
+        ln(`G01 X${f3(h.x)} F${Math.round(feed*.5)}`);
+        ln(`G00 Z${sz}.`);
+      }
+    });
+  } else {
+    holes.forEach((h,i)=>{
+      if(isHH){
+        const isLeft=op==='g74';
+        const cycDef=`CYCL DEF 206 TAPPING NEW~ Q200=2 Q201=-${f3(depth)} Q206=${tapFeed} Q211=0 Q203=0 Q204=${sz}`;
+        if(i===0) ln(String(10+i*10),cycDef,null);
+        ln(String(20+i*10),`L X+${f3(h.x)} Y+${f3(h.y)} FMAX ${isLeft?'M4':'M3'}`,{x:h.x,y:h.y,z:sz,tp:'rapid'});
+        ln(String(30+i*10),'CYCL CALL',{x:h.x,y:h.y,z:-depth,tp:'tap'});
+      } else if(isSiemens){
+        const synMode=op==='g842'?'CYCLE84('+sz+',0,2,-'+f3(depth)+',,,'+tapRpm+','+pitch+',1)':'CYCLE84('+sz+',0,2,-'+f3(depth)+',,,'+tapRpm+','+pitch+',0)';
+        ln(`G00 X${f3(h.x)} Y${f3(h.y)}`,{x:h.x,y:h.y,z:sz,tp:'rapid'});
+        if(i===0) ln(synMode,null);
+        ln('MCALL',{x:h.x,y:h.y,z:-depth,tp:'tap'});
+      } else {
+        // G84 rigid / G84.2 sync / G74 left
+        let cyc='';
+        if(op==='g84')  cyc=`G84 X${f3(h.x)} Y${f3(h.y)} Z-${f3(depth)} R2. F${tapFeed}`;
+        else if(op==='g842') cyc=`G84.2 X${f3(h.x)} Y${f3(h.y)} Z-${f3(depth)} R2. F${tapFeed} L1`;
+        else if(op==='g74') cyc=`G74 X${f3(h.x)} Y${f3(h.y)} Z-${f3(depth)} R2. F${tapFeed}`;
+        ln(cyc,{x:h.x,y:h.y,z:-depth,tp:'tap'});
+      }
+    });
+  }
+
+  if(isHH){ ln('99','L Z+'+sz+' FMAX M5 M9',{x:0,y:0,z:sz,tp:'rapid'}); ln('100','M30'); hd('END PGM '+progName()+' MM'); }
+  else if(isSiemens){ ln('MCALL'); ln('G00 Z'+sz); ln('M05 M09'); ln('M30'); }
+  else{ ln('G80'); ln('G00 Z'+sz+'. M05 M09'); ln('G28 G91 Z0.'); ln('M30'); hd('%'); }
+  return L;
+}
+
+function genDMG(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,paths){
+  // DMG Mori — Celos med Siemens 840D SL eller Fanuc 30i bas
+  // Identifierar om Fanuc- eller Siemens-bas används
+  const isFanuc=post.includes('Fanuc')||post.includes('fanuc');
+  if(isFanuc) return genFanuc(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,paths);
+  // Siemens/Sinumerik ONE bas med DMG-specifika M-koder
+  const L=[];
+  const cm=s=>L.push({text:';'+s,cls:'gc-cm',pt:null});
+  const hd=s=>L.push({text:s,cls:'gc-hd',pt:null});
+  const ln=(code,pt=null)=>L.push({code,pt});
+  hd(';'+progName()+'.MPF');
+  cm('DMG MORI CELOS — '+post);
+  cm('Verktyg: T'+(S.tool+1)+' '+t.n+' Ø'+t.dia+'mm');
+  cm('Material: '+mat);
+  cm('Op: '+S.op.toUpperCase());
+  L.push({text:'',cls:'',pt:null});
+  // DMG Celos header — Sinumerik ONE
+  ln('G71 G90 G17 DIAMOF');
+  ln('MSG("DMG '+progName()+' - '+t.n+'")');
+  ln('T='+(S.tool+1));
+  ln('D1 M06');
+  if(post.includes('5-axel')||post.includes('TRAORI')) ln('TRAORI(1)');
+  ln('SPOS='+rpm);
+  ln('G00 Z'+sz+' M03');
+  if(post.includes('CYCLE832')||post.includes('High speed')) ln('CYCLE832(0.01,112002,1)');
+  if(cool!=='AV') ln('M08');
+  paths.forEach(seg=>{
+    if(seg.type==='rapid') ln('G00 X'+f3(seg.x)+' Y'+f3(seg.y),{x:seg.x,y:seg.y,z:sz,tp:'rapid'});
+    else if(seg.type==='plunge') ln('G01 Z-'+f3(seg.z)+' F'+Math.round(feed*.3),{x:seg.x,y:seg.y,z:-seg.z,tp:'plunge'});
+    else if(seg.type==='drill'){ln('CYCLE81('+sz+',0,2,-'+f3(seg.z)+')',null);ln('G00 X'+f3(seg.x)+' Y'+f3(seg.y),{x:seg.x,y:seg.y,z:-seg.z,tp:'drill'});}
+    else if(seg.type==='tap'){ln('CYCLE84('+sz+',0,2,-'+f3(seg.z)+',,,'+rpm+','+(t.pitch||1.25)+',1)',null);ln('G00 X'+f3(seg.x)+' Y'+f3(seg.y),{x:seg.x,y:seg.y,z:-seg.z,tp:'tap'});}
+    else ln('G01 X'+f3(seg.x)+' Y'+f3(seg.y)+' Z-'+f3(seg.z||ap)+' F='+feed,{x:seg.x,y:seg.y,z:-(seg.z||ap),tp:'cut'});
+  });
+  if(post.includes('CYCLE832')||post.includes('High speed')) ln('CYCLE832()');
+  if(post.includes('5-axel')||post.includes('TRAORI')) ln('TRAFOOF');
+  ln('G00 Z'+sz+' M05 M09');
+  ln('MSG("")');
+  ln('M30');
+  return L;
+}
+
+function genMitsubishi(t,rpm,feed,ap,sz,cool,wpX,wpY,mat,post,paths){
+  // Mitsubishi M800S / M80 / M70 / E80
+  const L=[];
+  const cm=s=>L.push({text:'( '+s+' )',cls:'gc-cm',pt:null});
+  const hd=s=>L.push({text:s,cls:'gc-hd',pt:null});
+  const ln=(code,pt=null)=>L.push({code,pt});
+  const isHS=post.includes('G5')||post.includes('High speed');
+  const is5ax=post.includes('5-axel')||post.includes('RTCP');
+  hd('%');
+  hd('O'+String(S.tool+2001).padStart(4,'0'));
+  cm('MITSUBISHI '+post);
+  cm('T'+(S.tool+1)+' '+t.n+' D'+t.dia);
+  cm('MAT: '+mat+' | OP: '+S.op.toUpperCase());
+  L.push({text:'',cls:'',pt:null});
+  ln('G21 G17 G40 G49 G80 G90');
+  if(isHS) ln('G05 P10000');           // High-speed mode M800S
+  if(is5ax) ln('G43.4 H'+(S.tool+1)); // RTCP/Tool center point M800S
+  else ln('G43 H'+(S.tool+1)+' Z'+sz+'.');
+  ln('T'+(S.tool+1)+' M06');
+  ln('S'+rpm+' M03');
+  ln('G00 Z'+sz+'.');
+  if(cool!=='AV') ln(cool.includes('Dimma')?'M07':'M08');
+  paths.forEach(seg=>{
+    if(seg.type==='rapid') ln('G00 X'+f3(seg.x)+' Y'+f3(seg.y),{x:seg.x,y:seg.y,z:sz,tp:'rapid'});
+    else if(seg.type==='plunge') ln('G01 Z-'+f3(seg.z)+' F'+Math.round(feed*.3),{x:seg.x,y:seg.y,z:-seg.z,tp:'plunge'});
+    else if(seg.type==='drill'){
+      // Mitsubishi DEEP drill cycle
+      ln('G83 X'+f3(seg.x)+' Y'+f3(seg.y)+' Z-'+f3(seg.z)+' R2. Q'+f3(seg.z/3)+' F'+Math.round(feed*.5),{x:seg.x,y:seg.y,z:-seg.z,tp:'drill'});
+      ln('G80');
+    } else if(seg.type==='tap'){
+      // Mitsubishi rigid tap G84
+      ln('G84 X'+f3(seg.x)+' Y'+f3(seg.y)+' Z-'+f3(seg.z)+' R2. F'+(rpm*(t.pitch||1.25)).toFixed(0),{x:seg.x,y:seg.y,z:-seg.z,tp:'tap'});
+      ln('G80');
+    } else ln('G01 X'+f3(seg.x)+' Y'+f3(seg.y)+' Z-'+f3(seg.z||ap)+' F'+feed,{x:seg.x,y:seg.y,z:-(seg.z||ap),tp:'cut'});
+  });
+  if(isHS) ln('G05 P0');
+  if(is5ax) ln('G49');
+  ln('G00 Z'+sz+'.');
+  ln('M05 M09');
+  ln('G28 G91 Z0.');
+  ln('M30');
+  hd('%');
+  return L;
+}
+
+function clearAll(){S.gcLines=[];S.simPaths=[];S.simIdx=0;document.getElementById('gcodeScroll').innerHTML='<div class="gc-line"><span class="gc-cm">; Program rensat</span></div>';document.getElementById('stLines').textContent='0';document.getElementById('stTime').textContent='—';document.getElementById('stDist').textContent='—';resetSim();notify('Rensat','wrn');}
+
+// ═══════════════════════════════════════
+// RÖSTSTYRNING — Web Speech API
+// ═══════════════════════════════════════
+let recognition = null;
+let voiceActive = false;
+
+function initVoice() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    notify('Röst stöds ej i denna webbläsare — använd Safari', 'wrn');
+    return null;
+  }
+  const r = new SpeechRecognition();
+  r.lang = 'sv-SE';
+  r.continuous = true;
+  r.interimResults = true;
+
+  r.onstart = () => {
+    document.getElementById('voiceStatus').textContent = '🔴 Lyssnar...';
+    document.getElementById('voiceStatus').style.color = '#ff2d55';
+  };
+  r.onend = () => {
+    if (voiceActive) r.start(); // keep listening
+    else {
+      document.getElementById('voiceStatus').textContent = 'Stoppad';
+      document.getElementById('voiceStatus').style.color = '#3d5570';
+    }
+  };
+  r.onerror = (e) => {
+    document.getElementById('voiceStatus').textContent = 'Fel: ' + e.error;
+    if (e.error === 'not-allowed') notify('Tillåt mikrofon i Safari-inställningar', 'wrn');
+  };
+  r.onresult = (e) => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript.toLowerCase().trim();
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    document.getElementById('voiceResult').textContent = interim || final;
+    if (final) processVoice(final);
+  };
+  return r;
+}
+
+function toggleVoice() {
+  const btn = document.getElementById('voiceBtn');
+  const panel = document.getElementById('voicePanel');
+  voiceActive = !voiceActive;
+
+  if (voiceActive) {
+    if (!recognition) recognition = initVoice();
+    if (!recognition) { voiceActive = false; return; }
+    recognition.start();
+    btn.textContent = '⏹ Stopp';
+    btn.classList.add('listening');
+    panel.style.display = 'flex';
+    notify('Röststyrning aktiv', 'ok');
+  } else {
+    if (recognition) recognition.stop();
+    btn.textContent = '🎤 Röst';
+    btn.classList.remove('listening');
+    panel.style.display = 'none';
+    notify('Röststyrning stoppad', 'inf');
+  }
+}
+
+function processVoice(text) {
+  const t = text.toLowerCase();
+  document.getElementById('voiceResult').style.color = '#00e87a';
+  setTimeout(() => document.getElementById('voiceResult').style.color = '#00c8ff', 600);
+
+  // ── MASKIN ──
+  const machineMap = {
+    'heidenhain': 'heidenhain', 'heiden': 'heidenhain', 'tnc': 'heidenhain',
+    'fanuc': 'fanuc', 'fanuk': 'fanuc',
+    'siemens': 'siemens', 'sinumerik': 'siemens', 'sp200': 'siemens', 'sp 200': 'siemens',
+    'dmg': 'dmg', 'dmg mori': 'dmg', 'celos': 'dmg',
+    'mitsubishi': 'mitsubishi', 'mitsubisi': 'mitsubishi',
+    'haas': 'haas',
+    'mazak': 'mazak', 'mazatrol': 'mazak',
+    'okuma': 'okuma'
+  };
+  for (const [key, val] of Object.entries(machineMap)) {
+    if (t.includes(key)) {
+      const card = document.querySelector(`[data-m="${val}"]`);
+      if (card) { selMachine(card); notify('Maskin: ' + card.querySelector('.mc-name').textContent, 'ok'); return; }
+    }
+  }
+
+  // ── OPERATION ──
+  const opMap = {
+    'fräs': 'fras', 'fras': 'fras', 'fräsning': 'fras',
+    'plan': 'plan', 'planfräs': 'plan',
+    'ficka': 'ficka', 'pocket': 'ficka',
+    'borr': 'borr', 'borrning': 'borr', 'drilling': 'borr',
+    'gäng': 'gang', 'gängning': 'gang', 'tapping': 'gang',
+    'kontur': 'kontur', 'contour': 'kontur',
+    'spiral': 'spiral',
+    'gravyr': 'gravyr', 'gravering': 'gravyr',
+    '3d': '3d', 'tredimensionell': '3d'
+  };
+  for (const [key, val] of Object.entries(opMap)) {
+    if (t.includes(key)) {
+      const btn = document.querySelector(`.op-btn[onclick*="${val}"]`);
+      if (btn) { selOp(val, btn); notify('Operation: ' + key, 'ok'); return; }
+    }
+  }
+
+  // ── MATERIAL ──
+  const matMap = {
+    'aluminium': 'al6061', 'aluminuim': 'al6061', 'al': 'al6061',
+    '6061': 'al6061', '7075': 'al7075',
+    'stål': 's355', 'stal': 's355', 's235': 's235', 's355': 's355', 'c45': 'c45',
+    'rostfritt': '304', 'rostfri': '304', '316': '316l', '304': '304',
+    'titan': 'ti', 'titanium': 'ti',
+    'inconel': 'inconel',
+    'mässing': 'brass', 'brass': 'brass',
+    'gjutjärn': 'cast', 'gjutjarn': 'cast',
+    'plast': 'pom', 'pom': 'pom',
+    'kolfib': 'cf', 'carbon': 'cf'
+  };
+  for (const [key, val] of Object.entries(matMap)) {
+    if (t.includes(key)) {
+      const sel = document.getElementById('matSel');
+      sel.value = val; matPreset();
+      notify('Material: ' + sel.selectedOptions[0].text, 'ok'); return;
+    }
+  }
+
+  // ── RPM ──
+  const rpmMatch = t.match(/(?:rpm|r ?p ?m|varv)\s*(\d{3,5})/);
+  if (rpmMatch) {
+    document.getElementById('rpm').value = rpmMatch[1];
+    autoCalc(); notify('RPM: ' + rpmMatch[1], 'ok'); return;
+  }
+
+  // ── MATNING ──
+  const feedMatch = t.match(/(?:matning|feed|hastighet)\s*(\d{2,5})/);
+  if (feedMatch) {
+    document.getElementById('feed').value = feedMatch[1];
+    document.getElementById('stFeed').textContent = feedMatch[1];
+    notify('Matning: ' + feedMatch[1] + ' mm/min', 'ok'); return;
+  }
+
+  // ── SKÄRDJUP ──
+  const apMatch = t.match(/(?:skärdjup|djup|ap)\s*(\d{1,3})/);
+  if (apMatch) {
+    document.getElementById('ap').value = apMatch[1];
+    notify('Skärdjup: ' + apMatch[1] + ' mm', 'ok'); return;
+  }
+
+  // ── ÄMNE / DIMENSIONS ──
+  const xMatch = t.match(/(?:längd|x)\s*(\d{1,4})/);
+  if (xMatch) { document.getElementById('wpX').value = xMatch[1]; notify('Längd X: ' + xMatch[1], 'ok'); return; }
+  const yMatch = t.match(/(?:bredd|y)\s*(\d{1,4})/);
+  if (yMatch) { document.getElementById('wpY').value = yMatch[1]; notify('Bredd Y: ' + yMatch[1], 'ok'); return; }
+
+  // ── ÅTGÄRDER ──
+  if (t.includes('generera') || t.includes('skapa') || t.includes('kör')) {
+    generateCode(); notify('Genererar NC-program...', 'ok'); return;
+  }
+  if (t.includes('simulera') || t.includes('simulation') || t.includes('spela')) {
+    runSim(); notify('Startar simulering...', 'ok'); return;
+  }
+  if (t.includes('exportera') || t.includes('spara') || t.includes('ladda ner')) {
+    openExport(); notify('Öppnar export...', 'ok'); return;
+  }
+  if (t.includes('rensa') || t.includes('töm') || t.includes('nollställ')) {
+    clearAll(); notify('Rensat', 'wrn'); return;
+  }
+  if (t.includes('stopp') || t.includes('stop') || t.includes('tyst')) {
+    toggleVoice(); return;
+  }
+
+  // Okänt kommando
+  document.getElementById('voiceStatus').textContent = '❓ Förstod ej: "' + text + '"';
+  document.getElementById('voiceStatus').style.color = '#ffe135';
+  setTimeout(() => {
+    document.getElementById('voiceStatus').textContent = '🔴 Lyssnar...';
+    document.getElementById('voiceStatus').style.color = '#ff2d55';
+  }, 2000);
+}
+
+
+// ═══════════════════════════════════════
+// 3D VISARE — Three.js STL + OBJ
+// ═══════════════════════════════════════
+let scene3d=null, camera3d=null, renderer3d=null, mesh3d=null;
+let isWire=false;
+const ptr={down:false,x:0,y:0,btn:0};
+const rot={x:0.4,y:0.5};
+let zoomVal=1;
+let pinchStart=0;
+
+function init3d(){
+  const c=document.getElementById('canvas3d');
+  if(!c||!window.THREE) return;
+  scene3d=new THREE.Scene();
+  scene3d.background=new THREE.Color(0x07090d);
+  scene3d.add(new THREE.AmbientLight(0xffffff,0.5));
+  const dlight=new THREE.DirectionalLight(0x00c8ff,0.8);
+  dlight.position.set(1,2,3); scene3d.add(dlight);
+  const dlight2=new THREE.DirectionalLight(0xff7700,0.4);
+  dlight2.position.set(-2,-1,-1); scene3d.add(dlight2);
+  const w=c.parentElement.clientWidth, h=220;
+  camera3d=new THREE.PerspectiveCamera(45,w/h,0.01,10000);
+  camera3d.position.set(0,0,5);
+  renderer3d=new THREE.WebGLRenderer({canvas:c,antialias:true});
+  renderer3d.setPixelRatio(window.devicePixelRatio);
+  renderer3d.setSize(w,h);
+  // Grid
+  const grid=new THREE.GridHelper(10,20,0x1f2d40,0x141920);
+  scene3d.add(grid);
+  // Touch & mouse events
+  c.addEventListener('mousedown',e=>{ptr.down=true;ptr.x=e.clientX;ptr.y=e.clientY;ptr.btn=e.button;});
+  c.addEventListener('mousemove',e=>{if(!ptr.down)return;
+    if(ptr.btn===0){rot.y+=(e.clientX-ptr.x)*0.01;rot.x+=(e.clientY-ptr.y)*0.01;}
+    ptr.x=e.clientX;ptr.y=e.clientY;render3d();});
+  c.addEventListener('mouseup',()=>ptr.down=false);
+  c.addEventListener('wheel',e=>{zoomVal=Math.max(0.1,zoomVal*(e.deltaY>0?1.1:0.9));render3d();});
+  // Touch
+  c.addEventListener('touchstart',e=>{
+    if(e.touches.length===1){ptr.down=true;ptr.x=e.touches[0].clientX;ptr.y=e.touches[0].clientY;}
+    if(e.touches.length===2){pinchStart=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+    e.preventDefault();},{passive:false});
+  c.addEventListener('touchmove',e=>{
+    if(e.touches.length===1&&ptr.down){
+      rot.y+=(e.touches[0].clientX-ptr.x)*0.01;
+      rot.x+=(e.touches[0].clientY-ptr.y)*0.01;
+      ptr.x=e.touches[0].clientX;ptr.y=e.touches[0].clientY;render3d();
+    }
+    if(e.touches.length===2){
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      zoomVal=Math.max(0.1,zoomVal*(pinchStart/d));pinchStart=d;render3d();
+    }
+    e.preventDefault();},{passive:false});
+  c.addEventListener('touchend',()=>ptr.down=false);
+  render3d();
+}
+
+function render3d(){
+  if(!renderer3d||!scene3d||!camera3d) return;
+  if(mesh3d){mesh3d.rotation.x=rot.x;mesh3d.rotation.y=rot.y;}
+  camera3d.position.z=5*zoomVal;
+  renderer3d.render(scene3d,camera3d);
+}
+
+function resetCamera3d(){rot.x=0.4;rot.y=0.5;zoomVal=1;render3d();}
+
+function toggleWire(){
+  isWire=!isWire;
+  document.getElementById('wireBtn').style.color=isWire?'#00c8ff':'#7a9bb8';
+  if(mesh3d){
+    mesh3d.traverse(c=>{
+      if(c.isMesh&&c.material){
+        if(isWire){c.material.wireframe=true;c.material.color.set(0x00c8ff);}
+        else{c.material.wireframe=false;c.material.color.set(0x88aacc);}
+      }
+    });
+    render3d();
+  }
+}
+
+function load3dModel(file){
+  if(!scene3d) init3d();
+  const ext=file.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const buf=e.target.result;
+    if(mesh3d){scene3d.remove(mesh3d);mesh3d=null;}
+    if(ext==='stl') loadSTL(buf,file.name);
+    else if(ext==='obj') loadOBJ(buf,file.name);
+    else notify('3D: Stöder STL och OBJ','wrn');
+  };
+  if(ext==='stl') reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
+}
+
+function loadSTL(buf, name){
+  // Parse STL binary or ASCII
+  const dv=new DataView(buf);
+  let geo=new THREE.BufferGeometry();
+  let isBin=true;
+  // Check ASCII
+  const header=new Uint8Array(buf,0,80);
+  const txt=new TextDecoder().decode(new Uint8Array(buf,0,256));
+  if(txt.trim().startsWith('solid')&&txt.includes('facet')) isBin=false;
+
+  const verts=[];
+  if(isBin){
+    const n=dv.getUint32(80,true);
+    for(let i=0;i<n;i++){
+      const off=84+i*50+12;
+      for(let v=0;v<3;v++){
+        verts.push(dv.getFloat32(off+v*12,true));
+        verts.push(dv.getFloat32(off+v*12+4,true));
+        verts.push(dv.getFloat32(off+v*12+8,true));
+      }
+    }
+  } else {
+    const lines=new TextDecoder().decode(buf).split('\n');
+    lines.forEach(l=>{const m=l.trim().match(/^vertex\s+(\S+)\s+(\S+)\s+(\S+)/);if(m){verts.push(+m[1],+m[2],+m[3]);}});
+  }
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  geo.computeVertexNormals();
+  finalize3d(geo,name,verts.length/3);
+}
+
+function loadOBJ(text, name){
+  const verts=[],faces=[];
+  const pos=[];
+  text.split('\n').forEach(line=>{
+    const p=line.trim().split(/\s+/);
+    if(p[0]==='v') pos.push([+p[1],+p[2],+p[3]]);
+    else if(p[0]==='f'){
+      const idx=p.slice(1).map(x=>parseInt(x.split('/')[0])-1);
+      for(let i=1;i<idx.length-1;i++){
+        [idx[0],idx[i],idx[i+1]].forEach(j=>{verts.push(...pos[j]);});
+      }
+    }
+  });
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  geo.computeVertexNormals();
+  finalize3d(geo,name,verts.length/3);
+}
+
+function finalize3d(geo,name,triCount){
+  geo.computeBoundingBox();
+  const box=geo.boundingBox;
+  const cx=(box.max.x+box.min.x)/2,cy=(box.max.y+box.min.y)/2,cz=(box.max.z+box.min.z)/2;
+  const sz=Math.max(box.max.x-box.min.x,box.max.y-box.min.y,box.max.z-box.min.z);
+  geo.translate(-cx,-cy,-cz);
+  const scale=3/sz;
+  const mat=new THREE.MeshPhongMaterial({color:0x88aacc,specular:0x224466,shininess:60,side:THREE.DoubleSide});
+  mesh3d=new THREE.Mesh(geo,mat);
+  mesh3d.scale.set(scale,scale,scale);
+  scene3d.add(mesh3d);
+  resetCamera3d();
+  document.getElementById('viewer3dMsg').style.display='none';
+  // Model info
+  const sizeX=(box.max.x-box.min.x).toFixed(1),sizeY=(box.max.y-box.min.y).toFixed(1),sizeZ=(box.max.z-box.min.z).toFixed(1);
+  const info=document.getElementById('modelInfo');
+  info.style.display='block';
+  info.innerHTML=`📦 ${name}<br>Dim: ${sizeX} × ${sizeY} × ${sizeZ} mm<br>Trianglar: ${triCount.toLocaleString()}`;
+  // Auto-update workpiece dimensions
+  document.getElementById('wpX').value=parseFloat(sizeX).toFixed(0);
+  document.getElementById('wpY').value=parseFloat(sizeY).toFixed(0);
+  document.getElementById('wpZ').value=parseFloat(sizeZ).toFixed(0);
+  notify('3D-modell inläst: '+name,'ok');
+}
+
+// Init 3D when page loads
+window.addEventListener('load',()=>{
+  setTimeout(()=>{if(window.THREE) init3d();},500);
+});
+window.addEventListener('resize',()=>{
+  if(!renderer3d||!camera3d) return;
+  const c=document.getElementById('canvas3d');
+  const w=c.parentElement.clientWidth;
+  camera3d.aspect=w/220;camera3d.updateProjectionMatrix();
+  renderer3d.setSize(w,220);render3d();
+});
+
+function notify(msg,type){const el=document.getElementById('notif');el.textContent=msg;el.className='notif '+type+' show';clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),3000);}
+</script>
+
+</body>
+</html>
