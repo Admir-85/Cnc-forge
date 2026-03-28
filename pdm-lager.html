@@ -1,1 +1,549 @@
+<!DOCTYPE html>
 
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDM · Lager</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#05070d;--bg2:#080b14;--g2:rgba(255,255,255,0.06);--b1:rgba(255,255,255,0.07);--b2:rgba(255,255,255,0.12);--blue:#3b82f6;--cyan:#06b6d4;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--purple:#8b5cf6;--tx:#f1f5f9;--tx2:#94a3b8;--tx3:#475569;--H:'Outfit',sans-serif;--M:'JetBrains Mono',monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--H);font-size:14px;min-height:100vh;background-image:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(59,130,246,.08),transparent 60%),radial-gradient(ellipse 60% 40% at 80% 110%,rgba(139,92,246,.06),transparent 60%)}
+.app{display:flex;min-height:100vh}
+/* SIDEBAR */
+.sidebar{width:190px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--b1);position:sticky;top:0;height:100vh;overflow-y:auto;padding:12px 0}
+.sid-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--tx3);padding:4px 14px 10px}
+.sid-item{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--tx2);border-left:3px solid transparent;transition:all .15s;user-select:none}
+.sid-item:hover{color:var(--tx);background:rgba(255,255,255,.04)}
+.sid-item.on{color:var(--tx);background:rgba(59,130,246,.1);border-left-color:var(--blue);font-weight:600}
+.sid-cnt{margin-left:auto;font-family:var(--M);font-size:10px;color:var(--tx3);background:rgba(255,255,255,.07);border-radius:7px;padding:1px 6px}
+/* MAIN */
+.main{flex:1;min-width:0;overflow-x:hidden}
+/* HEADER */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;background:rgba(5,7,13,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--b1);position:sticky;top:0;z-index:50}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-ico{width:30px;height:30px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px}
+.logo-txt{font-size:16px;font-weight:700}
+.logo-txt span{color:var(--tx2);font-weight:400;font-size:12px;margin-left:5px}
+.kpis{display:flex}
+.kpi{padding:4px 12px;border-right:1px solid var(--b1);display:flex;flex-direction:column;align-items:center}
+.kpi:last-child{border:none}
+.kpi-l{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;font-weight:500}
+.kpi-v{font-size:15px;font-weight:700;font-family:var(--M)}
+.kpi-v.bl{color:var(--blue)}.kpi-v.am{color:var(--amber)}.kpi-v.gr{color:var(--green)}
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--b1);border-bottom:1px solid var(--b1)}
+.card{background:var(--bg2);padding:14px 18px;overflow:hidden;position:relative}
+.card::after{content:'';position:absolute;top:-18px;right:-18px;width:60px;height:60px;border-radius:50%;opacity:.07}
+.card.bl::after{background:var(--blue)}.card.gr::after{background:var(--green)}.card.am::after{background:var(--amber)}.card.rd::after{background:var(--red)}.card.pu::after{background:var(--purple)}
+.card-ico{font-size:15px;margin-bottom:5px}
+.card-v{font-size:24px;font-weight:800;font-family:var(--M);line-height:1}
+.card-l{font-size:9.5px;color:var(--tx2);margin-top:3px;text-transform:uppercase;letter-spacing:.6px;font-weight:500}
+.card-bar{height:2px;margin-top:8px;background:rgba(255,255,255,.06);border-radius:1px;overflow:hidden}
+.card-bar-fill{height:100%;border-radius:1px;transition:width .7s}
+.card.bl .card-v{color:var(--blue)}.card.bl .card-bar-fill{background:linear-gradient(90deg,var(--blue),#60a5fa)}
+.card.gr .card-v{color:var(--green)}.card.gr .card-bar-fill{background:linear-gradient(90deg,var(--green),#34d399)}
+.card.am .card-v{color:var(--amber)}.card.am .card-bar-fill{background:linear-gradient(90deg,var(--amber),#fbbf24)}
+.card.rd .card-v{color:var(--red)}.card.rd .card-bar-fill{background:linear-gradient(90deg,var(--red),#f87171)}
+.card.pu .card-v{color:var(--purple);font-size:15px;margin-top:3px}.card.pu .card-bar-fill{background:linear-gradient(90deg,var(--purple),#a78bfa)}
+/* ALERT */
+.alert{display:none;align-items:center;gap:9px;padding:8px 24px;background:linear-gradient(90deg,rgba(239,68,68,.12),transparent);border-bottom:1px solid rgba(239,68,68,.2);font-size:12px;color:#fca5a5}
+.alert.on{display:flex}
+.alert-dot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;animation:pu 1.5s infinite}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.3}}
+/* NAV */
+.nav{display:flex;gap:3px;padding:0 24px;height:44px;align-items:center;background:var(--bg2);border-bottom:1px solid var(--b1)}
+.ntab{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:7px;font-size:12.5px;font-weight:500;color:var(--tx2);cursor:pointer;border:1px solid transparent;transition:all .15s;user-select:none}
+.ntab:hover{color:var(--tx);background:var(--g2)}
+.ntab.on{color:var(--tx);background:var(--g2);border-color:var(--b2)}
+.nbadge{background:var(--red);color:#fff;border-radius:9px;font-size:9.5px;padding:1px 5px;font-family:var(--M);min-width:16px;text-align:center}
+.nbadge.am{background:var(--amber);color:#000}
+/* TOOLBAR */
+.toolbar{display:flex;gap:8px;align-items:center;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--b1);flex-wrap:wrap}
+.sw{position:relative;flex:1;min-width:160px;max-width:300px}
+.sw input{width:100%;height:33px;background:var(--g2);border:1px solid var(--b2);border-radius:7px;padding:0 10px 0 30px;color:var(--tx);font-family:var(--H);font-size:12.5px;outline:none}
+.sw input:focus{border-color:var(--blue)}
+.sw input::placeholder{color:var(--tx3)}
+.sw-ico{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--tx3);pointer-events:none}
+select{height:33px;background:var(--g2);border:1px solid var(--b2);border-radius:7px;padding:0 10px;color:var(--tx);font-family:var(--H);font-size:12.5px;cursor:pointer;outline:none}
+.btn{height:33px;padding:0 13px;border-radius:7px;font-family:var(--H);font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid transparent;display:flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
+.btn-g{background:var(--g2);border-color:var(--b2);color:var(--tx2)}.btn-g:hover{color:var(--tx)}
+.btn-b{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;box-shadow:0 2px 10px rgba(59,130,246,.3)}.btn-b:hover{box-shadow:0 4px 18px rgba(59,130,246,.45)}
+.btn-r{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#fca5a5}
+/* TABLE */
+.vsec{display:none}.vsec.on{display:block}
+.shdr{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 3px}
+.shdr-l{font-size:10.5px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.shdr-r{font-size:10.5px;color:var(--tx3);font-family:var(--M)}
+.tw{overflow-x:auto;padding:0 20px 36px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:7px 8px;text-align:left;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--tx3);border-bottom:1px solid var(--b1);cursor:pointer;white-space:nowrap;user-select:none}
+th:hover{color:var(--blue)}
+.rn{text-align:right}.rc{text-align:center}
+tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s;cursor:pointer;position:relative}
+tr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px}
+tr.rl::before{background:var(--amber)}tr.rz::before{background:var(--red)}
+tr:hover{background:rgba(59,130,246,.04)}
+tr.rz{background:rgba(239,68,68,.025)}tr.rl{background:rgba(245,158,11,.025)}tr.rf{background:rgba(245,158,11,.02)}
+td{padding:8px 8px;vertical-align:middle}
+.an{font-family:var(--M);color:var(--blue);font-size:11px;font-weight:600;white-space:nowrap}
+.nm{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.lv{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--tx2)}
+.nr{text-align:right;font-family:var(--M);font-size:11.5px;color:var(--tx2)}
+.nc{text-align:center;font-family:var(--M);font-size:12px;font-weight:600}
+.sn{font-family:var(--M);font-size:12px;font-weight:700}
+.sok{color:var(--green)}.slo{color:var(--amber)}.sze{color:var(--red)}
+.pill{display:inline-flex;padding:2px 7px;border-radius:18px;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+.p-ok{background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.2)}
+.p-lo{background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.25)}
+.p-ze{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+.cp{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:500;background:rgba(59,130,246,.1);color:#93c5fd;border:1px solid rgba(59,130,246,.18);white-space:nowrap}
+.abs{display:flex;gap:4px}
+.ab{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;border:1px solid var(--b1);background:none;color:var(--tx3);transition:all .15s}
+.ab:hover{background:var(--g2);color:var(--tx)}
+.ab.af{color:var(--amber);border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.06)}
+.ab.ao{color:var(--blue);border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.06)}
+/* MODAL */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);z-index:300;align-items:center;justify-content:center}
+.ov.on{display:flex}
+.modal{background:#0d1120;border:1px solid var(--b2);border-radius:14px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;padding:24px 26px;box-shadow:0 30px 90px rgba(0,0,0,.8);animation:mi .2s cubic-bezier(.34,1.4,.64,1)}
+@keyframes mi{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:none}}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.mt{font-size:15px;font-weight:700}
+.mc{width:26px;height:26px;border-radius:5px;background:var(--g2);border:1px solid var(--b1);color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.mc:hover{background:rgba(239,68,68,.1);color:#f87171}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.f{display:flex;flex-direction:column;gap:4px}
+.f.fw{grid-column:1/-1}
+.f label{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.f input,.f select{background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:7px;padding:7px 10px;color:var(--tx);font-family:var(--H);font-size:13px;outline:none;width:100%}
+.f input:focus,.f select:focus{border-color:var(--blue)}
+.f input[readonly]{opacity:.4;cursor:not-allowed}
+.mf{display:flex;gap:7px;margin-top:18px;justify-content:flex-end}
+/* ORDER FOOTER */
+.of{display:flex;align-items:center;gap:12px;padding:12px 20px;border-top:1px solid var(--b1);background:var(--bg2);flex-wrap:wrap}
+.ot-l{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.ot-v{font-family:var(--M);font-size:19px;font-weight:700;color:var(--blue)}
+.oqi input{width:50px;height:26px;background:var(--g2);border:1px solid var(--b2);border-radius:5px;color:var(--tx);font-family:var(--M);font-size:11px;text-align:center;outline:none;padding:0 3px}
+.rb{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;opacity:.5}
+.rb:hover{opacity:1}
+.empty{padding:45px;text-align:center;color:var(--tx3)}
+.empty-i{font-size:32px;margin-bottom:9px}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="sidebar">
+  <div class="sid-title">Kategorier</div>
+  <div id="CL"></div>
+</div>
+<div class="main">
+<div class="hdr">
+  <div class="logo"><div class="logo-ico">P</div><div class="logo-txt">PDM Lager<span>PBA Solution AB</span></div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-l">Artiklar</div><div class="kpi-v bl" id="HT">—</div></div>
+    <div class="kpi"><div class="kpi-l">Lagervärde</div><div class="kpi-v gr" id="HV">—</div></div>
+    <div class="kpi"><div class="kpi-l">Varningar</div><div class="kpi-v am" id="HW">—</div></div>
+  </div>
+</div>
+<div class="cards">
+  <div class="card bl"><div class="card-ico">📦</div><div class="card-v" id="CT">0</div><div class="card-l">Totalt artiklar</div><div class="card-bar"><div class="card-bar-fill" style="width:100%"></div></div></div>
+  <div class="card gr"><div class="card-ico">✅</div><div class="card-v" id="CI">0</div><div class="card-l">I lager</div><div class="card-bar"><div class="card-bar-fill" id="BI" style="width:0%"></div></div></div>
+  <div class="card am"><div class="card-ico">⚠️</div><div class="card-v" id="CL2">0</div><div class="card-l">Lågt saldo</div><div class="card-bar"><div class="card-bar-fill" id="BL" style="width:0%"></div></div></div>
+  <div class="card rd"><div class="card-ico">🚨</div><div class="card-v" id="CZ">0</div><div class="card-l">Nollager</div><div class="card-bar"><div class="card-bar-fill" id="BZ" style="width:0%"></div></div></div>
+  <div class="card pu"><div class="card-ico">💰</div><div class="card-v" id="CV">0</div><div class="card-l">Lagervärde kr</div><div class="card-bar"><div class="card-bar-fill" style="width:100%"></div></div></div>
+</div>
+<div class="alert" id="AL"><div class="alert-dot"></div><span id="AT"></span></div>
+<div class="nav">
+  <div class="ntab on" onclick="st('alla')">📋 Alla artiklar</div>
+  <div class="ntab" onclick="st('laga')">⚠️ Lågt lager <span class="nbadge" id="BL2">0</span></div>
+  <div class="ntab" onclick="st('fav')">⭐ Favoriter</div>
+  <div class="ntab" onclick="st('ord')">🛒 Beställning <span class="nbadge am" id="BO">0</span></div>
+</div>
+<div class="toolbar">
+  <div class="sw"><span class="sw-ico">🔍</span><input id="SQ" placeholder="Sök artikelnr, benämning, leverantör…" oninput="ra()"></div>
+  <select id="SC" onchange="ra()">
+    <option value="artNr">Sortera: Art.nr</option>
+    <option value="name">Benämning</option>
+    <option value="supplier">Leverantör</option>
+    <option value="stock">Lager ↓</option>
+    <option value="price">Utpris ↓</option>
+  </select>
+  <select id="SF" onchange="ra()">
+    <option value="all">Alla lager</option>
+    <option value="in">I lager</option>
+    <option value="lo">Lågt</option>
+    <option value="ze">Nollager</option>
+  </select>
+  <div style="flex:1"></div>
+  <button class="btn btn-g" onclick="st('ord')">🛒 <span id="OC">0</span></button>
+  <button class="btn btn-b" onclick="oA()">+ Ny artikel</button>
+</div>
+
+<!-- ALLA -->
+
+<div class="vsec on" id="v-alla">
+  <div class="shdr"><div class="shdr-l">Artikelregister</div><div class="shdr-r" id="RC"></div></div>
+  <div class="tw"><table>
+    <thead><tr>
+      <th onclick="ss('artNr')">Art.nr<span id="si-artNr"></span></th>
+      <th onclick="ss('name')">Benämning<span id="si-name"></span></th>
+      <th>Kategori</th>
+      <th onclick="ss('supplier')">Leverantör<span id="si-supplier"></span></th>
+      <th class="rn" onclick="ss('price')">Utpris<span id="si-price"></span></th>
+      <th class="rn" onclick="ss('buyPrice')">Inköpspris<span id="si-buyPrice"></span></th>
+      <th class="rn">Marginal</th>
+      <th class="rc" onclick="ss('stock')">Lager<span id="si-stock"></span></th>
+      <th class="rc">Lagervar.</th>
+      <th class="rc">Disp.</th>
+      <th class="rn">Lagervärde</th>
+      <th>Status</th><th></th>
+    </tr></thead>
+    <tbody id="TB"></tbody>
+  </table></div>
+</div>
+<!-- LÅGT -->
+<div class="vsec" id="v-laga">
+  <div class="shdr"><div class="shdr-l">⚠️ Lågt eller nollager</div></div>
+  <div class="tw"><table>
+    <thead><tr><th>Art.nr</th><th>Benämning</th><th>Kategori</th><th>Leverantör</th><th class="rc">Lager</th><th class="rc">Lagervar.</th><th class="rc">Disp.</th><th>Status</th><th></th></tr></thead>
+    <tbody id="LB"></tbody>
+  </table></div>
+</div>
+<!-- FAV -->
+<div class="vsec" id="v-fav">
+  <div class="shdr"><div class="shdr-l">⭐ Favoriter</div></div>
+  <div class="tw"><table>
+    <thead><tr><th>Art.nr</th><th>Benämning</th><th>Kategori</th><th class="rn">Utpris</th><th class="rc">Lager</th><th class="rn">Lagervärde</th><th>Status</th><th></th></tr></thead>
+    <tbody id="FB"></tbody>
+  </table></div>
+</div>
+<!-- ORDER -->
+<div class="vsec" id="v-ord">
+  <div class="shdr"><div class="shdr-l">🛒 Beställningslista</div><div class="shdr-r">Klicka 🛒 i listan</div></div>
+  <div class="tw"><table>
+    <thead><tr><th>Art.nr</th><th>Benämning</th><th>Leverantör</th><th class="rc">Lager</th><th class="rc">Antal</th><th class="rn">Á-pris</th><th class="rn">Rad totalt</th><th></th></tr></thead>
+    <tbody id="OB"></tbody>
+  </table></div>
+  <div class="of">
+    <div><div class="ot-l">Total beställningskostnad</div><div class="ot-v" id="OT">0,00 kr</div></div>
+    <div style="flex:1"></div>
+    <button class="btn btn-g" onclick="exp()">📥 Exportera CSV</button>
+  </div>
+</div>
+</div></div>
+
+<!-- MODAL ADD -->
+
+<div class="ov" id="AP">
+  <div class="modal">
+    <div class="mh"><div class="mt">➕ Ny artikel</div><button class="mc" onclick="cp('AP')">✕</button></div>
+    <div class="fg">
+      <div class="f"><label>Artikelnr *</label><input id="fa"></div>
+      <div class="f fw"><label>Benämning *</label><input id="fn"></div>
+      <div class="f fw"><label>Leverantör</label><input id="fs"></div>
+      <div class="f"><label>Kategori</label><select id="fk"><option value="Skär">✂️ Skär</option><option value="Pinfrässar">🌀 Pinfrässar</option><option value="Borrskaft">💎 Borrskaft</option><option value="Gängtappar">🔧 Gängtappar</option><option value="Fräskroppar">🔨 Fräskroppar</option><option value="Borr">🔩 Borr</option><option value="Skruvar">🪛 Skruvar</option><option value="Hållare">🗜️ Hållare</option><option value="Sängar">🛏️ Sängar</option><option value="Handskar">🧤 Handskar</option><option value="Övrigt">⚙️ Övrigt</option></select></div>
+      <div class="f"><label>Utpris (kr)</label><input id="fp" type="number" step=".01"></div>
+      <div class="f"><label>Inköpspris (kr)</label><input id="fb" type="number" step=".01"></div>
+      <div class="f"><label>Lager (st)</label><input id="fl" type="number"></div>
+      <div class="f"><label>Lagervarning</label><input id="fw2" type="number"></div>
+      <div class="f"><label>Min.saldo larm</label><input id="fm" type="number"></div>
+    </div>
+    <div class="mf"><button class="btn btn-g" onclick="cp('AP')">Avbryt</button><button class="btn btn-b" onclick="addA()">Spara</button></div>
+  </div>
+</div>
+<!-- MODAL EDIT -->
+<div class="ov" id="EP">
+  <div class="modal">
+    <div class="mh"><div class="mt">✏️ Redigera artikel</div><button class="mc" onclick="cp('EP')">✕</button></div>
+    <div class="fg">
+      <div class="f"><label>Artikelnr</label><input id="ea" readonly></div>
+      <div class="f fw"><label>Benämning</label><input id="en"></div>
+      <div class="f fw"><label>Leverantör</label><input id="es"></div>
+      <div class="f"><label>Kategori</label><select id="ek"><option value="Skär">✂️ Skär</option><option value="Pinfrässar">🌀 Pinfrässar</option><option value="Borrskaft">💎 Borrskaft</option><option value="Gängtappar">🔧 Gängtappar</option><option value="Fräskroppar">🔨 Fräskroppar</option><option value="Borr">🔩 Borr</option><option value="Skruvar">🪛 Skruvar</option><option value="Hållare">🗜️ Hållare</option><option value="Sängar">🛏️ Sängar</option><option value="Handskar">🧤 Handskar</option><option value="Övrigt">⚙️ Övrigt</option></select></div>
+      <div class="f"><label>Utpris (kr)</label><input id="ep" type="number" step=".01"></div>
+      <div class="f"><label>Inköpspris (kr)</label><input id="eb" type="number" step=".01"></div>
+      <div class="f"><label>Lager (st)</label><input id="el" type="number"></div>
+      <div class="f"><label>Lagervarning</label><input id="ew" type="number"></div>
+      <div class="f"><label>Min.saldo larm</label><input id="em" type="number"></div>
+    </div>
+    <div class="mf"><button class="btn btn-r" onclick="delA()">🗑 Ta bort</button><div style="flex:1"></div><button class="btn btn-g" onclick="cp('EP')">Avbryt</button><button class="btn btn-b" onclick="saveE()">Spara</button></div>
+  </div>
+</div>
+
+<script>
+const CATS=[{id:'alla',ic:'📋',lb:'Alla kategorier'},{id:'Skär',ic:'✂️',lb:'Skär'},{id:'Pinfrässar',ic:'🌀',lb:'Pinfrässar'},{id:'Borrskaft',ic:'💎',lb:'Borrskaft'},{id:'Gängtappar',ic:'🔧',lb:'Gängtappar'},{id:'Fräskroppar',ic:'🔨',lb:'Fräskroppar'},{id:'Borr',ic:'🔩',lb:'Borr'},{id:'Skruvar',ic:'🪛',lb:'Skruvar'},{id:'Hållare',ic:'🗜️',lb:'Hållare'},{id:'Sängar',ic:'🛏️',lb:'Sängar'},{id:'Handskar',ic:'🧤',lb:'Handskar'},{id:'Övrigt',ic:'⚙️',lb:'Övrigt'}];
+const ci=id=>(CATS.find(c=>c.id===id)||{ic:'⚙️'}).ic;
+
+const D=[
+["PDR261","Nitro Grip Handskar","",49.5,0,200,0,20,"Handskar"],
+["PDR260","Permanent lyftmagnet HCYQ500E","",5852,0,0,0,1,"Övrigt"],
+["PDR259","Permanent lyftmagnet HCYQ250E","",3256,0,0,0,1,"Övrigt"],
+["PDR258","Lyftklamp 1500 kg","",5146.9,0,0,0,1,"Övrigt"],
+["PDR257","Permanent magnet 400kg","",5258,0,0,0,1,"Övrigt"],
+["PDR256","Permanent magnet 300 kg","",4257,0,0,0,1,"Övrigt"],
+["PDR255","Permanent magnet 200 kg","",2515.7,0,1,0,1,"Övrigt"],
+["PDR254","WEDGE CLAMP","",3533.2,0,0,0,1,"Hållare"],
+["PDR253","Mini OK Vise FK2-VT-T","",3179,0,6,0,1,"Hållare"],
+["PDR252","PBA Tygghandskarvinter (M-L-XL)","",151.8,0,612,0,50,"Handskar"],
+["PDR251","125*22.23mm G80","",41.8,0,0,0,10,"Övrigt"],
+["PDR227","PBA Tygghandskar mekaniska (S)","Eternity Safety",151.8,46.86,49,0,20,"Handskar"],
+["PDR225","PBA skärhandskar S-M-XL","Eternity Safety",47.85,13.33,560,70,50,"Handskar"],
+["PDR224","Luftdriven slipmaskin","",6446,0,0,0,1,"Övrigt"],
+["PDR223","PBA Klämsäkra arbetshandskar L","Eternity Safety",259.6,0,99,0,20,"Handskar"],
+["PDR222","PBA Vattentäta arbetshandskar XL","",94.6,0,60,0,20,"Handskar"],
+["PDR221","PBA Skärhandskar Storlek L","Eternity Safety",46.53,13.33,0,100,20,"Handskar"],
+["PDR220","Dubbla sängar","Metalokozmetika",3212,0,0,0,1,"Sängar"],
+["PDR219","Enkla sängar","Metalokozmetika",1566.4,885.15,160,0,10,"Sängar"],
+["PDR218","Flap Disc 125x22,23 G80","FOSHAN SONGQI",42.9,4.38,0,0,10,"Övrigt"],
+["PDR215","Air Impact Wrench","Shanghai Jujing",2750,0,2,0,1,"Övrigt"],
+["PDR214","Pickmagnet Tools","Communication Devices",328.9,0,13,0,2,"Övrigt"],
+["PDR213","LCD writing tablet calculator","",379.5,0,3,0,1,"Övrigt"],
+["PDR212","Öronpropp","Fridro",2156,0,0,0,1,"Övrigt"],
+["PDR211","Flashlight 3 in 1","Jinhua Junyi",328.9,0,3,0,1,"Övrigt"],
+["PDR210","125x1x22.3 Kapskiva","FOSHAN SONGQI",41.8,1.56,475,0,20,"Övrigt"],
+["PDM400","QD220-229-25-5D-CPQ","Fengy",3940,0,2,0,1,"Borr"],
+["PDM399","QD240-249-32-3D-CPQ","Fengy",4100,0,2,0,1,"Borr"],
+["PDM398","CTD40SD-1261 25L99 BP6R-09","HANGZHOU CHAI",7430,0,2,0,1,"Fräskroppar"],
+["PDM397","CCMAP-3444L92 6P5R-17","HANGZHOU CHAI",6690,0,3,0,1,"Fräskroppar"],
+["PDM396","CCM90AP-2332L82 5P6R-17","HANGZHOU CHAI",6320,0,3,0,1,"Fräskroppar"],
+["PDM395","CCM90AP-2350H44A22R-17","HANGZHOU CHAI",6280,0,0,0,1,"Fräskroppar"],
+["PDM394","CFM90CN-874A27R-13-D50","HANGZHOU CHAI",6400,0,2,0,1,"Fräskroppar"],
+["PDM393","CNHX131108T CT5320","HANGZHOU CHAI",185,0,0,0,10,"Skär"],
+["PDM392","BLMP1105R-M CT5320","HANGZHOU CHAI",0,0,100,0,20,"Skär"],
+["PDM391","APKT160408-HM CT5320","HANGZHOU CHAI",138,0,250,0,20,"Skär"],
+["PDM390","LNMU0303ZER-MJ CT5320","",129,0,350,0,20,"Skär"],
+["PDM389","TEBL 335-M16-11","HANGZHOU CHAI",3420,0,4,0,1,"Fräskroppar"],
+["PDM388","CCMAP-4363L63A27R-17","HANGZHOU CHAI",6318,0,0,0,1,"Fräskroppar"],
+["PDM387","CFM50AP-635A27R-17-H23.2","HANGZHOU CHAI",5230,0,0,0,1,"Fräskroppar"],
+["PDM386","D16*55*65*110/R1-6T","HANGZHOU CHAI",2840,0,30,0,5,"Pinfrässar"],
+["PDM385","APKT170520R-EM-CT5320","HANGZHOU CHAI",147.4,0,0,0,10,"Skär"],
+["PDM384","CCM90AP-4363H44A27R-17","HANGZHOU CHAI",6780,0,0,0,1,"Fräskroppar"],
+["PDM383","CST4010","HANGZHOU CHAI",20.68,4.7,50,0,10,"Skruvar"],
+["PDM382","SNGX130608-M CT5320","HANGZHOU CHAI",162.8,49.9,30,0,10,"Skär"],
+["PDM381","CFM90SN-980A27R-13","HANGZHOU CHAI",4873,641,1,0,1,"Fräskroppar"],
+["PDM380","CSC4090","HANGZHOU CHAI",20.68,4.7,100,0,10,"Skruvar"],
+["PDM379","APKT170508-EM CT5320","HANGZHOU CHAI",147.4,19,490,0,20,"Skär"],
+["PDM378","TFM90AP 663-22R-17","HANGZHOU CHAI",3872,395,0,0,1,"Fräskroppar"],
+["PDM377","CTS10W-P","HANGZHOU CHAI",47.3,19,10,0,5,"Skruvar"],
+["PDM376","CSG3585-P","HANGZHOU CHAI",47.3,19,0,0,5,"Skruvar"],
+["PDM375","SDKT140408M-PM CT5320","HANGZHOU CHAI",156,34,170,0,20,"Skär"],
+["PDM374","CFM90SD-880A22R-14","HANGZHOU CHAI",4873,423,0,0,1,"Fräskroppar"],
+["PDM373","CFM90SD-663A22R-14","HANGZHOU CHAI",4015,301,0,0,1,"Fräskroppar"],
+["PDM372","CFM90SD-663A22R-14 (B)","HANGZHOU CHAI",4015,301,3,0,1,"Fräskroppar"],
+["PDM371","CTS15W","HANGZHOU CHAI",47.3,19,50,0,10,"Skruvar"],
+["PDM370","CST4010 (B)","HANGZHOU CHAI",47.3,4.8,50,0,10,"Skruvar"],
+["PDM369","SVKT110408-ML CT5320","HANGZHOU CHAI",158.4,39,50,0,10,"Skär"],
+["PDM368","CCM90SV-6980A32R-11","HANGZHOU CHAI",12210,5706,2,0,1,"Fräskroppar"],
+["PDM367","CCM90SV-5863A27R-11","HANGZHOU CHAI",10758,4220,2,0,1,"Fräskroppar"],
+["PDM366","CCM90SV-4850A22R-11","HANGZHOU CHAI",9658,3346,2,0,1,"Fräskroppar"],
+["PDM365","SP12-D80-27-6T","Zhuzhou ACME",4279,535,1,0,1,"Fräskroppar"],
+["PDM364","M2,5x6,5 Screws","Preciturn",19.25,3,100,0,20,"Skruvar"],
+["PDM363","QDX-253-S1 M-F7024","Fengy",1210,0,32,0,5,"Borr"],
+["PDM362","LDX-332-S1 M-F7024","Fengy",1540,0,20,0,5,"Borr"],
+["PDM361","DIN 376 X20-HT M16*2 110L","Preciturn",1100,0,4,0,2,"Gängtappar"],
+["PDM360","DIN 376 X21-NRT M20*2.5 190L","Preciturn",4279,0,0,0,1,"Gängtappar"],
+["PDM359","DIN 376 X21-NRT M16*2 190L","Preciturn",3432,0,0,0,1,"Gängtappar"],
+["PDM358","DIN 376 X20-HT M24*3 160L","Preciturn",1815,8,8,0,2,"Gängtappar"],
+["PDM357","DIN 376 X20-HT M20*2.5 140L","Preciturn",1386,8,2,0,2,"Gängtappar"],
+["PDM356","QD140-149-15-5D-CPQ","Fengy",2123,0,0,0,1,"Borr"],
+["PDM355","QDX-142-S1 M-F7024","Fengy",726,0,12,0,3,"Borr"],
+["PDM354","LD320-329-32-5D-CPQ","Fengy",7095,0,2,0,1,"Borr"],
+["PDM353","QD170-179-20-5D-CPQ","Fengy",2420,0,0,0,1,"Borr"],
+["PDM352","QDX-175-S1 M-F7024","Fengy",863.5,0,14,0,3,"Borr"],
+["PDM351","QDX-220-S1 M-F7024","Fengy",1265,0,20,0,5,"Borr"],
+["PDM350","QDX-260-S1 M-F7024","Fengy",1237.5,0,15,0,5,"Borr"],
+["PDM349","DGCM-80-27-6T-88","Preciturn",6413,0,1,0,1,"Fräskroppar"],
+["PDM348","SNMU13T608-CM.MZF40TN","Preciturn",152.9,0,420,0,20,"Skär"],
+["PDM347","D12*D12*52FL*90OAL","",1485,0,10,0,2,"Borr"],
+["PDM346","D63*74EC-JT50SP12-04","Preciturn",9570,0,1,0,1,"Fräskroppar"],
+["PDM345","SPMT120408-HW.YS30","Preciturn",147.4,0,480,0,20,"Skär"],
+["PDM343","EMS5-16481610855","Zhuzhou ACME",3047,0,0,0,1,"Fräskroppar"],
+["PDM341","LNKT1206-80-27-7T","",6160,946,0,0,1,"Fräskroppar"],
+["PDM340","APMT1604PDER-GM PP7221","",149.6,0,0,0,10,"Skär"],
+["PDM339","APKT1003PDER-GM90 TR621","Zhuzhou ACME",148.5,0,0,0,10,"Skär"],
+["PDM338","LNKT120608PNR TP6224","",189.2,57,0,0,10,"Skär"],
+["PDM337","MS4090 Screws","Preciturn",28.6,3,0,0,10,"Skruvar"],
+["PDM336","MS2560 Screws","Preciturn",28.6,3,0,0,10,"Skruvar"],
+["PDM335","BT40-C25-100","",2530,0,0,0,1,"Borrskaft"],
+["PDM334","SDRT14T3PDR-PM H2210","",140.8,128,140,0,20,"Skär"],
+["PDM333","M8-ISO2/6H","",572,520,0,0,1,"Gängtappar"],
+["PDM332","D16*48*D16*100L5F","",2321,2110,0,0,1,"Pinfrässar"],
+["PDM331","D12*8*D12*80L*4F(45°)","Preciturn",950.4,205,0,0,1,"Pinfrässar"],
+["PDM330","D16*50*D16*110L*5F","Preciturn",2420,537,14,0,2,"Pinfrässar"],
+["PDM329","D50*84EC-JT50-SP12-04","Preciturn",7040,3840,1,0,1,"Fräskroppar"],
+["PDM328","BT40-60*","",204.6,16,0,0,5,"Borrskaft"],
+["PDM327","SK50 verktygs fixtur","",3498,356,0,0,1,"Hållare"],
+["PDM326","BT40 verktygs fixtur","",2453,219,0,0,1,"Hållare"],
+["PDM324","QDX-281-S1 M-F7024","Fengy",1350,100,9,0,2,"Borr"],
+["PDM323","CMZ01-032-G32-SP12-03","Preciturn",3157,674.03,0,0,1,"Fräskroppar"],
+["PDM322","CMZ01-025-G25-SP12-02","Preciturn",2486,388.59,1,0,1,"Fräskroppar"],
+["PDM321","Screw I60M5*13","Preciturn",17.6,1.73,600,0,50,"Skruvar"],
+["PDM320","D63*106-EC-JT50-SP12","Preciturn",10657.9,4436.02,1,0,1,"Fräskroppar"],
+["PDM317","PM M16-6HX IKZ TIN","",130.9,0,0,0,5,"Gängtappar"],
+["PDM315","C25-COLLETS","Dezhou Ouruichi",671,34.08,1,0,1,"Borrskaft"],
+["PDM314","BT40-C25-135","Dezhou Ouruichi",2541,293.71,0,0,1,"Borrskaft"],
+["PDM313","BT40-C32-135","Dezhou Ouruichi",2541,293.71,0,0,1,"Borrskaft"],
+["PDM312","BT40-C32-105","Dezhou Ouruichi",1078,248.42,1,0,1,"Borrskaft"],
+["PDM311","GT24-DIN","Dezhou Ouruichi",968,91.23,0,0,1,"Borrskaft"],
+["PDM310","GT12-DIN","Dezhou Ouruichi",748,63.31,0,0,1,"Borrskaft"],
+["PDM309","BT40-GT24","Dezhou Ouruichi",3212,406.6,0,0,1,"Borrskaft"],
+["PDM308","BT40-GT12","Dezhou Ouruichi",2948,286.89,1,0,1,"Borrskaft"],
+["PDM307","HDC25-Hydraulic Collets","Dezhou Ouruichi",858,173.23,0,0,1,"Borrskaft"],
+["PDM306","BT40-HDC25-135","Dezhou Ouruichi",2432.1,687,0,0,1,"Borrskaft"],
+["PDM305","BT-40-HDC25-105","Dezhou Ouruichi",2310,544.11,0,0,1,"Borrskaft"],
+["PDM304","100A10R-S45HN09-W","Shenzhen Qitianda",4939,2561.79,0,0,1,"Fräskroppar"],
+["PDM303","80A08R-S45HN09-W","Shenzhen Qitianda",4653,1923.87,0,0,1,"Fräskroppar"],
+["PDM302","63A06R-S45HN09C-W","Shenzhen Qitianda",4070,1508.19,0,0,1,"Fräskroppar"],
+["PDM301","SNHT13T6ANER-CM.MZF40TN","Shenzhen Qitianda",103.95,24.89,0,0,10,"Skär"],
+["PDM300","D20*45*D20*100L*6F","Shenzhen Qitianda",2306.7,835.17,0,0,1,"Pinfrässar"],
+["PDM299","XNMX080608TR-CM.MZF40TN","Shenzhen Qitianda",158.4,20.63,130,0,20,"Skär"],
+["PDM298","MFXN08-90-80-27-6T","Shenzhen Qitianda",4598,1923.87,0,0,1,"Fräskroppar"],
+["PDM297","MFXN08-90-50-22-4T","Shenzhen Qitianda",3652,1024.67,0,0,1,"Fräskroppar"],
+["PDM296","LNMU0303ZER-CM.MZF40TN","Shenzhen Qitianda",110.88,10.32,70,0,20,"Skär"],
+["PDM295","EXN03R 35X32X130-5T","Shenzhen Qitianda",3278,765.42,2,0,1,"Fräskroppar"],
+["PDM294","EXN03R 32X32X130-5T","Shenzhen Qitianda",3212,726.96,0,0,1,"Fräskroppar"],
+["PDM293","APMT1604PDER-DLG.MZF30TN","Shenzhen Qitianda",152.9,15.14,210,0,20,"Skär"],
+["PDM292","50AP16-55/70-4T","Shenzhen Qitianda",4653,1923.87,0,0,1,"Fräskroppar"],
+["PDM291","40AP16-55-135-3T","Shenzhen Qitianda",4312,1164.39,0,0,1,"Fräskroppar"],
+["PDM290","63AP16-40/70-4T","Shenzhen Qitianda",4978.6,2247.82,0,5,1,"Fräskroppar"],
+["PDM289","SDHT120520-SN.MZF40TN","Shenzhen Qitianda",125.4,25.68,80,20,20,"Skär"],
+["PDM288","CSDR-63-SD12-5T-22","Shenzhen Qitianda",4288.9,775.62,2,10,1,"Fräskroppar"],
+["PDM286","D8*20*d8*60L-4F","",701.8,638,0,0,1,"Pinfrässar"],
+["PDM285","EMR-S4-164516100","",2255,452.95,0,0,1,"Pinfrässar"],
+["PDM284","QDX-250-S1 M-F7024","",935,850,0,0,1,"Borr"],
+["PDM283","QD250-260-32-1.5D-CPQ","",3080,2800,0,0,1,"Borr"],
+["PDM281","QDX-283-S1-M-F7024","",1350,899,0,0,1,"Borr"],
+["PDM280","QD280-289-32-3D-CPQ","",3795,3450,2,0,1,"Borr"],
+["PDM275","BLD20-R0-5-45-100-6","",2306.7,0,0,0,1,"Pinfrässar"],
+["PDM274","WCMX06T308-TR624","",126.5,0,110,0,20,"Skär"],
+["PDM273","SPMT-0704M12H-P-GM X3G203","",130.9,0,140,0,20,"Skär"],
+["PDM272","EM-S4-D16.0*100*D16","",1900.8,1728,0,0,1,"Pinfrässar"],
+["PDM271","16x16x40x100 5F","",1980,455,0,0,1,"Pinfrässar"],
+["PDM270","HM BORR 18,8","",1716,0,2,0,1,"Borr"],
+["PDM269","HM BORR 15,1","",1083.5,0,0,0,1,"Borr"],
+["PDM268","HM BORR 14,3","",863.5,0,2,0,1,"Borr"],
+["PDM267","HM BORR 12","",847,0,2,0,1,"Borr"],
+["PDM266","HM BORR 11,5","",808.5,0,1,0,1,"Borr"],
+["PDM265","HM BORR 11,0","",808.5,0,0,0,1,"Borr"],
+["PDM263","HM BORR 10,3","",748,0,0,0,1,"Borr"],
+["PDM262","HM BORR 9,4","",638,0,0,0,1,"Borr"],
+["PDM261","HM BORR 8,8","",638,0,0,0,1,"Borr"],
+["PDM260","HM BORR 8,6","",572,0,0,0,1,"Borr"],
+["PDM259","HM BORR 6,8","",385,0,0,0,1,"Borr"],
+["PDM258","HM BORR 5,8","",319,0,2,0,1,"Borr"],
+["PDM257","HM BORR 5,6","",319,0,2,0,1,"Borr"],
+["PDM256","HM BORR 4,3","",308,0,2,0,1,"Borr"],
+["PDM245","QDX-248-S1/A(S)-F7024","Haffman China",1023,580,4,10,2,"Borr"],
+["PDM244","QDX-228-S1/A(S)-F7024","",880,540,43,0,10,"Borr"],
+["PDM243","QDX-190-S1/A(S)-F7024","",880,450,5,0,3,"Borr"],
+["PDM242","QD240-249-32-5D-CA","",4125,1500,1,0,1,"Borr"],
+["PDM241","QD220-229-25-5D-CA","",3916,1300,2,0,1,"Borr"],
+["PDM240","QD190-199-25-5D-CA","",3586,1100,2,0,1,"Borr"],
+["PDM239","NPSF 1/8-27 (ISO 376) TiCN","",1298,0,27,0,5,"Gängtappar"],
+["PDM237","M12x1.75 6H (ISO 376) TiCN","",5148,0,12,0,3,"Gängtappar"],
+["PDM234","NRT-HSSE-TIN M20x2,5x190L","",3520,0,7,0,2,"Gängtappar"],
+["PDM233","RDKW2006MT-PM ZT11","",175.45,0,80,0,20,"Skär"],
+["PDM232","NRT-HSSE-TIN M16x2 0x150L","",3520,0,4,0,2,"Gängtappar"],
+["PDM226","SDMT08T3M-PM H2820","Zhuzhou ACME",149.6,0,200,0,20,"Skär"],
+["PDM225","HNMX097ANSN-M-ZR5520","Mingze Hardware",181.5,37.91,60,0,10,"Skär"],
+["PDM224","SNMX1306NND-M TL448","Mingze Hardware",132,19.99,40,0,10,"Skär"],
+["PDM206","BAP400R-C32-40-55M","MZG",6446,0,1,0,1,"Fräskroppar"],
+["PDM205","BAP400R-C32-32-55M","MZG",5918,0,2,0,1,"Fräskroppar"],
+["PDM198","HM.A1-25H7-GM","XIAN KTL",3437.5,1252.54,3,0,1,"Borr"],
+["PDM197","HM.A1-23H7-GM","XIAN KTL",2904,1070.82,4,0,1,"Borr"],
+["PDM194","APMT180608M-PM H2825","Zhuzhou Jat",140.8,34,70,150,20,"Skär"],
+["PDM193","APKT11T308M-PM H2825","Zhuzhou Jat",117.7,12.5,0,0,20,"Skär"],
+["PDM190","D12X85L 3F 90 HRC55","Bwin Precision",894.3,830,0,0,1,"Pinfrässar"],
+["PDM188","Plan Fräs D80-12-27-5T","Bwin Precision",4752,0,0,0,1,"Fräskroppar"],
+["PDM177","M2,5 X 7 TORX SCREW","HEIKENEI",21.45,19.5,50,0,20,"Skruvar"],
+["PDM176","M4,5 X 12 TORX SCREW","HEIKENEI",21.45,19.5,100,0,20,"Skruvar"],
+["PDM166","Air Impact Wrench","Shanghai Jujing",2750,0,2,0,1,"Övrigt"],
+["PDM164","D12*85-3F 140° HRC55","Bwin Precision",1012,208.27,19,0,3,"Pinfrässar"],
+["PDM163","UTCZ4-12X82X70 Special","XINRUI",1012,0,0,0,1,"Pinfrässar"],
+["PDM154","3F 90degree 35mm","FOSHAN SONGQI",803,130.45,3,0,2,"Pinfrässar"],
+["PDM153","3F 90degree 30mm","FOSHAN SONGQI",748,89.75,3,0,2,"Pinfrässar"],
+["PDM152","3F 90degree 25mm","FOSHAN SONGQI",616,60.53,3,0,2,"Pinfrässar"],
+["PDM151","3F 90degree 20.5mm","FOSHAN SONGQI",506,42.79,3,0,2,"Pinfrässar"],
+["PDM150","3F 90degree 16.5mm","FOSHAN SONGQI",418,33.4,15,0,5,"Pinfrässar"],
+["PDM149","3F 90degree 12.4mm","FOSHAN SONGQI",242,29.22,3,0,2,"Pinfrässar"],
+["PDM140","Hydraulisk hållare HSK 50","Fridro",5412,0,1,0,1,"Hållare"],
+["PDM139","MHB190-040R03W32-AP11","Edeco",6864,4480,1,0,1,"Fräskroppar"],
+["PDM137","TAP-32AP11-C32-48M-3T-140","Bwin Precision",5918,1301.69,0,0,1,"Fräskroppar"],
+["PDM135","TAP-63AP16-27-70M-4T-90","Bwin Precision",7953,1494,1,0,1,"Fräskroppar"],
+["PDM132","HMP01-050*55-XP40-SP12-04","XINRUI",5808,1250,1,0,1,"Fräskroppar"],
+["PDM130","HM-388-004","HTG",3520,0,1,0,1,"Pinfrässar"],
+["PDM129","HM-388-001","HTG",3960,0,3,0,1,"Pinfrässar"],
+["PDM128","Tap M8 x 1,26","FOSHAN SONGQI",638,0,15,0,5,"Gängtappar"],
+["PDM127","TapM8x1","FOSHAN SONGQI",734.8,0,20,0,5,"Gängtappar"],
+["PDM125","NPSF 1/8 Svart","Shenzhen OPT",1298,225.95,0,20,5,"Gängtappar"],
+["PDM124","DIN(376)X20-POT.M12*1.75L110","Preciturn",836,195,6,0,2,"Gängtappar"],
+["PDM121","CM90-1204C-T10","HTG",671,670,2,0,1,"Fräskroppar"],
+["PDM114","HM-388-003","HTG",1900.8,1700,7,0,1,"Pinfrässar"],
+["PDM113","HM-388-002","HTG",1900.8,1700,5,0,1,"Pinfrässar"],
+["PDM106","APMT1604PDR-TM2 HB6015","Bwin Precision",105.38,12.18,0,100,20,"Skär"],
+["PDM105","APMT1135PDR-TM2 HB6003 VIT","Bwin Precision",96.36,11.04,330,100,20,"Skär"],
+["PDM104","Spmt120408 XT4.GR313","Preciturn",118.8,21.04,380,100,20,"Skär"],
+["PDM103","APKT150412.PM.YBM253","Preciturn",103.62,29.49,190,100,20,"Skär"],
+["PDM102","APKT11T308 ZM X3G203","Xinrui Industry",96.36,15.1,90,150,20,"Skär"],
+["PDM101","APKT160408 ZM X3G203","Zhuzhou Jat",106.48,22.4,0,150,20,"Skär"]
+];
+
+let A=D.map(r=>({artNr:r[0],name:r[1],supplier:r[2],price:r[3],buyPrice:r[4],stock:r[5],stockWarn:r[6],minStock:r[7],category:r[8],reserved:0,fav:false,order:false}));
+let sCol='artNr',sDir=1,curTab='alla',eIdx=null,oQ={},aCat='alla';
+
+const fk=n=>(!n&&n!==0)||n===0?'—':n.toLocaleString('sv-SE',{minimumFractionDigits:2,maximumFractionDigits:2})+'\u202Fkr';
+const fkz=n=>n.toLocaleString('sv-SE',{minimumFractionDigits:2,maximumFractionDigits:2})+'\u202Fkr';
+const fn=n=>(n||0).toLocaleString('sv-SE');
+
+function ss2(a){const d=a.stock-a.reserved;if(d<=0)return'ze';if(a.stockWarn>0&&d<=a.stockWarn)return'lo';if(d<=a.minStock)return'lo';return'ok';}
+function sp(a){const s=ss2(a);if(s==='ze')return'<span class="pill p-ze">⛔ Nollager</span>';if(s==='lo')return'<span class="pill p-lo">⚠ Lågt</span>';return'<span class="pill p-ok">✓ OK</span>';}
+function dc(a){const s=ss2(a);return s==='ze'?'sze':s==='lo'?'slo':'sok';}
+
+function ss(col){if(sCol===col)sDir*=-1;else{sCol=col;sDir=1;}document.querySelectorAll('[id^="si-"]').forEach(e=>e.textContent='');const el=document.getElementById('si-'+col);if(el)el.textContent=sDir===1?' ↓':' ↑';ra();}
+function gs(list){return[...list].sort((a,b)=>{const av=a[sCol]??'',bv=b[sCol]??'';if(typeof av==='string')return av.localeCompare(bv)*sDir;return((av||0)-(bv||0))*sDir;});}
+function gf(){const q=document.getElementById('SQ').value.toLowerCase();const fs=document.getElementById('SF').value;return A.filter(a=>{if(q&&!a.artNr.toLowerCase().includes(q)&&!a.name.toLowerCase().includes(q)&&!a.supplier.toLowerCase().includes(q))return false;const s=ss2(a);if(fs==='in'&&s==='ze')return false;if(fs==='lo'&&s!=='lo')return false;if(fs==='ze'&&s!=='ze')return false;if(aCat!=='alla'&&a.category!==aCat)return false;return true;});}
+
+function mr(a,i){const d=a.stock-a.reserved;const s=ss2(a);const rc=s==='ze'?'rz':s==='lo'?'rl':'';const rf=a.fav?'rf':'';const mg=(a.buyPrice>0&&a.price>0)?((a.price-a.buyPrice)/a.price*100).toFixed(1)+'%':'—';const mc2=(a.buyPrice>0&&a.price>0)?(((a.price-a.buyPrice)/a.price)>.2?'var(--green)':'var(--amber)'):'var(--tx3)';const v=a.stock*(a.buyPrice||0);return`<tr class="${rc} ${rf}" onclick="oE(${i})"><td><span class="an">${a.artNr}</span></td><td><span class="nm" title="${a.name}">${a.name}</span></td><td><span class="cp">${ci(a.category)} ${a.category}</span></td><td><span class="lv" title="${a.supplier}">${a.supplier||'—'}</span></td><td class="nr">${fk(a.price)}</td><td class="nr" style="color:var(--cyan)">${fk(a.buyPrice)}</td><td class="nr" style="color:${mc2};font-weight:600">${mg}</td><td class="nc">${fn(a.stock)}</td><td class="nc" style="color:${a.stockWarn?'var(--amber)':'var(--tx3)'}">${a.stockWarn||'—'}</td><td class="nc"><span class="sn ${dc(a)}">${fn(d)}</span></td><td class="nr">${v?fkz(v):'—'}</td><td>${sp(a)}</td><td onclick="event.stopPropagation()"><div class="abs"><button class="ab ${a.fav?'af':''}" onclick="tF(${i})">⭐</button><button class="ab ${a.order?'ao':''}" onclick="tO(${i})">🛒</button></div></td></tr>`;}
+
+function rCS(){document.getElementById('CL').innerHTML=CATS.map(c=>{const cnt=c.id==='alla'?A.length:A.filter(a=>a.category===c.id).length;return`<div class="sid-item${aCat===c.id?' on':''}" onclick="sC('${c.id}')">${c.ic} ${c.lb}<span class="sid-cnt">${cnt}</span></div>`;}).join('');}
+
+function rM(){const list=gs(gf());document.getElementById('TB').innerHTML=list.map(a=>mr(a,A.indexOf(a))).join('');document.getElementById('RC').textContent=`${list.length} av ${A.length} artiklar`;}
+
+function rL(){const low=A.filter(a=>ss2(a)!=='ok');document.getElementById('BL2').textContent=low.length;if(!low.length){document.getElementById('LB').innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-i">✅</div><div>Inga artiklar med lågt saldo</div></div></td></tr>`;return;}document.getElementById('LB').innerHTML=low.map(a=>{const i=A.indexOf(a);const d=a.stock-a.reserved;return`<tr onclick="oE(${i})"><td><span class="an">${a.artNr}</span></td><td><span class="nm">${a.name}</span></td><td><span class="cp">${ci(a.category)} ${a.category}</span></td><td><span class="lv">${a.supplier||'—'}</span></td><td class="nc">${fn(a.stock)}</td><td class="nc" style="color:var(--amber)">${a.stockWarn||'—'}</td><td class="nc"><span class="sn ${dc(a)}">${fn(d)}</span></td><td>${sp(a)}</td><td onclick="event.stopPropagation()"><button class="ab ${a.order?'ao':''}" onclick="tO(${i})">🛒</button></td></tr>`;}).join('');}
+
+function rF(){const favs=A.filter(a=>a.fav);if(!favs.length){document.getElementById('FB').innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-i">⭐</div><div>Inga favoriter</div></div></td></tr>`;return;}document.getElementById('FB').innerHTML=favs.map(a=>{const i=A.indexOf(a);const d=a.stock-a.reserved;return`<tr onclick="oE(${i})"><td><span class="an">${a.artNr}</span></td><td><span class="nm">${a.name}</span></td><td><span class="cp">${ci(a.category)} ${a.category}</span></td><td class="nr">${fk(a.price)}</td><td class="nc"><span class="sn ${dc(a)}">${fn(d)}</span></td><td class="nr">${a.stock*(a.buyPrice||0)?fkz(a.stock*(a.buyPrice||0)):'—'}</td><td>${sp(a)}</td><td onclick="event.stopPropagation()"><div class="abs"><button class="ab af" onclick="tF(${i})">⭐</button><button class="ab ${a.order?'ao':''}" onclick="tO(${i})">🛒</button></div></td></tr>`;}).join('');}
+
+function rO(){const ords=A.filter(a=>a.order);document.getElementById('BO').textContent=ords.length;document.getElementById('OC').textContent=ords.length;let tot=0;if(!ords.length){document.getElementById('OB').innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-i">🛒</div><div>Inga artiklar i beställningslistan</div></div></td></tr>`;document.getElementById('OT').textContent='0,00\u202Fkr';return;}document.getElementById('OB').innerHTML=ords.map(a=>{const i=A.indexOf(a);if(!oQ[a.artNr])oQ[a.artNr]=Math.max(a.minStock,1);const q=oQ[a.artNr],cost=a.buyPrice||a.price||0,rt=q*cost;tot+=rt;return`<tr><td><span class="an">${a.artNr}</span></td><td><span class="nm">${a.name}</span></td><td><span class="lv">${a.supplier||'—'}</span></td><td class="nc">${fn(a.stock-a.reserved)}</td><td class="nc oqi"><input type="number" min="1" value="${q}" onchange="sOQ('${a.artNr}',this.value)"></td><td class="nr">${fkz(cost)}</td><td class="nr" style="color:var(--blue);font-weight:600">${fkz(rt)}</td><td><button class="rb" onclick="tO(${i})">✕</button></td></tr>`;}).join('');document.getElementById('OT').textContent=fkz(tot);}
+
+function rS(){const tot=A.length;const ins=A.filter(a=>ss2(a)!=='ze').length;const zer=A.filter(a=>ss2(a)==='ze').length;const low=A.filter(a=>ss2(a)==='lo').length;const val=A.reduce((s,a)=>s+a.stock*(a.buyPrice||0),0);document.getElementById('CT').textContent=tot;document.getElementById('CI').textContent=ins;document.getElementById('CZ').textContent=zer;document.getElementById('CL2').textContent=low;document.getElementById('CV').textContent=val.toLocaleString('sv-SE',{maximumFractionDigits:0});document.getElementById('HT').textContent=tot;document.getElementById('HV').textContent=val.toLocaleString('sv-SE',{maximumFractionDigits:0})+'\u202Fkr';document.getElementById('HW').textContent=low+zer;document.getElementById('BI').style.width=(ins/tot*100)+'%';document.getElementById('BL').style.width=(low/tot*100)+'%';document.getElementById('BZ').style.width=(zer/tot*100)+'%';const al=document.getElementById('AL');const crit=A.filter(a=>ss2(a)==='ze').slice(0,3).map(a=>a.artNr).join(', ');if(zer>0){document.getElementById('AT').textContent=`${zer} artikel(ar) NOLLAGER (${crit}${zer>3?'…':''})`;al.classList.add('on');}else if(low>0){document.getElementById('AT').textContent=`${low} artikel(ar) under lagervarning.`;al.classList.add('on');}else al.classList.remove('on');}
+
+function ra(){rM();rL();rF();rO();rS();rCS();}
+function sC(id){aCat=id;ra();}
+function tF(i){A[i].fav=!A[i].fav;ra();}
+function tO(i){A[i].order=!A[i].order;ra();}
+function sOQ(an,v){oQ[an]=Math.max(1,parseInt(v)||1);rO();}
+
+function st(tab){curTab=tab;document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));document.querySelectorAll('.vsec').forEach(v=>v.classList.remove('on'));document.querySelector(`.ntab[onclick="st('${tab}')"]`).classList.add('on');document.getElementById('v-'+tab).classList.add('on');}
+
+function oA(){['fa','fn','fs','fp','fb','fl','fw2','fm'].forEach(id=>document.getElementById(id).value='');document.getElementById('fm').value=5;document.getElementById('fk').value='Övrigt';document.getElementById('AP').classList.add('on');}
+
+function addA(){const an=document.getElementById('fa').value.trim();const nm=document.getElementById('fn').value.trim();if(!an||!nm){alert('Artikelnr och benämning krävs.');return;}if(A.find(a=>a.artNr===an)){alert('Artikelnr finns redan!');return;}const st2=parseFloat(document.getElementById('fl').value)||0;const bp=parseFloat(document.getElementById('fb').value)||0;A.push({artNr:an,name:nm,supplier:document.getElementById('fs').value||'',price:parseFloat(document.getElementById('fp').value)||0,buyPrice:bp,stock:st2,reserved:0,stockWarn:parseFloat(document.getElementById('fw2').value)||0,minStock:parseFloat(document.getElementById('fm').value)||5,category:document.getElementById('fk').value||'Övrigt',fav:false,order:false});cp('AP');ra();}
+
+function oE(i){eIdx=i;const a=A[i];document.getElementById('ea').value=a.artNr;document.getElementById('en').value=a.name;document.getElementById('es').value=a.supplier||'';document.getElementById('ek').value=a.category||'Övrigt';document.getElementById('ep').value=a.price||'';document.getElementById('eb').value=a.buyPrice||'';document.getElementById('el').value=a.stock||0;document.getElementById('ew').value=a.stockWarn||'';document.getElementById('em').value=a.minStock||5;document.getElementById('EP').classList.add('on');}
+
+function saveE(){const a=A[eIdx];a.name=document.getElementById('en').value;a.supplier=document.getElementById('es').value||'';a.category=document.getElementById('ek').value||'Övrigt';a.price=parseFloat(document.getElementById('ep').value)||0;a.buyPrice=parseFloat(document.getElementById('eb').value)||0;a.stock=parseFloat(document.getElementById('el').value)||0;a.stockWarn=parseFloat(document.getElementById('ew').value)||0;a.minStock=parseFloat(document.getElementById('em').value)||5;cp('EP');ra();}
+
+function delA(){if(!confirm('Ta bort '+A[eIdx].artNr+'?'))return;A.splice(eIdx,1);cp('EP');ra();}
+function cp(id){document.getElementById(id).classList.remove('on');}
+
+function exp(){const ords=A.filter(a=>a.order);if(!ords.length){alert('Inga artiklar i beställningslistan.');return;}let csv='Artikelnr;Benämning;Kategori;Leverantör;Lager;Antal;Inköpspris;Rad totalt\n';ords.forEach(a=>{const q=oQ[a.artNr]||a.minStock,cost=a.buyPrice||a.price||0;csv+=`${a.artNr};${a.name};${a.category};${a.supplier||''};${a.stock-a.reserved};${q};${cost.toFixed(2)};${(q*cost).toFixed(2)}\n`;});const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='bestallningslista.csv';link.click();}
+
+document.querySelectorAll('.ov').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('on');}));
+ra();
+</script>
+
+</body>
+</html>
