@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -181,12 +180,13 @@ td{padding:8px 8px;vertical-align:middle}
   </select>
   <div style="flex:1"></div>
   <button class="btn btn-g" onclick="saveData()">💾 Spara</button>
+  <button class="btn btn-g" onclick="document.getElementById('impFile').click()">📂 Importera</button>
+  <input type="file" id="impFile" accept=".json" style="display:none" onchange="impJSON(this)">
   <button class="btn btn-g" onclick="st('ord')">🛒 <span id="OC">0</span></button>
   <button class="btn btn-b" onclick="oA()">+ Ny artikel</button>
 </div>
 
 <!-- ALLA -->
-
 <div class="vsec on" id="v-alla">
   <div class="shdr"><div class="shdr-l">Artikelregister</div><div class="shdr-r" id="RC"></div></div>
   <div class="tw"><table>
@@ -227,19 +227,42 @@ td{padding:8px 8px;vertical-align:middle}
 <div class="vsec" id="v-ord">
   <div class="shdr"><div class="shdr-l">🛒 Beställningslista</div><div class="shdr-r">Klicka 🛒 i listan</div></div>
   <div class="tw"><table>
-    <thead><tr><th>Art.nr</th><th>Benämning</th><th>Leverantör</th><th class="rc">Lager</th><th class="rc">Antal</th><th class="rn">Á-pris</th><th class="rn">Rad totalt</th><th></th></tr></thead>
+    <thead><tr><th>Art.nr</th><th>Benämning</th><th>Leverantör</th><th class="rc">Lager</th><th class="rc">Antal</th><th class="rn">Inköpspris</th><th class="rn">Inköp totalt</th><th class="rn">Utpris</th><th class="rn">Försäljning totalt</th><th class="rn">Vinst</th><th></th></tr></thead>
     <tbody id="OB"></tbody>
   </table></div>
+  <!-- SUMMERING -->
+  <div style="margin:0 20px 0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,0.06)">
+      <div style="background:#080b14;padding:14px 18px">
+        <div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;font-weight:600">Total inköpskostnad</div>
+        <div style="font-family:var(--M);font-size:18px;font-weight:700;color:var(--red);margin-top:4px" id="OT">0,00 kr</div>
+      </div>
+      <div style="background:#080b14;padding:14px 18px">
+        <div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;font-weight:600">Total försäljning</div>
+        <div style="font-family:var(--M);font-size:18px;font-weight:700;color:var(--blue);margin-top:4px" id="OS">0,00 kr</div>
+      </div>
+      <div style="background:#080b14;padding:14px 18px">
+        <div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;font-weight:600">Total vinst</div>
+        <div style="font-family:var(--M);font-size:18px;font-weight:700;color:var(--green);margin-top:4px" id="OV">0,00 kr</div>
+      </div>
+      <div style="background:#080b14;padding:14px 18px">
+        <div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;font-weight:600">Vinstmarginal</div>
+        <div style="font-family:var(--M);font-size:18px;font-weight:700;color:var(--amber);margin-top:4px" id="OM">—</div>
+      </div>
+    </div>
+  </div>
   <div class="of">
-    <div><div class="ot-l">Total beställningskostnad</div><div class="ot-v" id="OT">0,00 kr</div></div>
     <div style="flex:1"></div>
-    <button class="btn btn-g" onclick="exp()">📥 Exportera CSV</button>
+    <button class="btn btn-g" onclick="exp()">📥 CSV</button>
+    <button class="btn btn-g" onclick="shareEmail()">📧 E-post</button>
+    <button class="btn btn-g" onclick="shareSMS()">💬 SMS</button>
+    <button class="btn btn-g" onclick="shareWA()">📱 WhatsApp</button>
+    <button class="btn btn-b" onclick="expJSON()">💾 Exportera data</button>
   </div>
 </div>
 </div></div>
 
 <!-- MODAL ADD -->
-
 <div class="ov" id="AP">
   <div class="modal">
     <div class="mh"><div class="mt">➕ Ny artikel</div><button class="mc" onclick="cp('AP')">✕</button></div>
@@ -519,7 +542,21 @@ function rL(){const low=A.filter(a=>ss2(a)!=='ok');document.getElementById('BL2'
 
 function rF(){const favs=A.filter(a=>a.fav);if(!favs.length){document.getElementById('FB').innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-i">⭐</div><div>Inga favoriter</div></div></td></tr>`;return;}document.getElementById('FB').innerHTML=favs.map(a=>{const i=A.indexOf(a);const d=a.stock-a.reserved;return`<tr onclick="oE(${i})"><td><span class="an">${a.artNr}</span></td><td><span class="nm">${a.name}</span></td><td><span class="cp">${ci(a.category)} ${a.category}</span></td><td class="nr">${fk(a.price)}</td><td class="nc"><span class="sn ${dc(a)}">${fn(d)}</span></td><td class="nr">${a.stock*(a.buyPrice||0)?fkz(a.stock*(a.buyPrice||0)):'—'}</td><td>${sp(a)}</td><td onclick="event.stopPropagation()"><div class="abs"><button class="ab af" onclick="tF(${i})">⭐</button><button class="ab ${a.order?'ao':''}" onclick="tO(${i})">🛒</button></div></td></tr>`;}).join('');}
 
-function rO(){const ords=A.filter(a=>a.order);document.getElementById('BO').textContent=ords.length;document.getElementById('OC').textContent=ords.length;let tot=0;if(!ords.length){document.getElementById('OB').innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-i">🛒</div><div>Inga artiklar i beställningslistan</div></div></td></tr>`;document.getElementById('OT').textContent='0,00\u202Fkr';return;}document.getElementById('OB').innerHTML=ords.map(a=>{const i=A.indexOf(a);if(!oQ[a.artNr])oQ[a.artNr]=Math.max(a.minStock,1);const q=oQ[a.artNr],cost=a.buyPrice||a.price||0,rt=q*cost;tot+=rt;return`<tr><td><span class="an">${a.artNr}</span></td><td><span class="nm">${a.name}</span></td><td><span class="lv">${a.supplier||'—'}</span></td><td class="nc">${fn(a.stock-a.reserved)}</td><td class="nc oqi"><input type="number" min="1" value="${q}" onchange="sOQ('${a.artNr}',this.value)"></td><td class="nr">${fkz(cost)}</td><td class="nr" style="color:var(--blue);font-weight:600">${fkz(rt)}</td><td><button class="rb" onclick="tO(${i})">✕</button></td></tr>`;}).join('');document.getElementById('OT').textContent=fkz(tot);}
+function rO(){const ords=A.filter(a=>a.order);document.getElementById('BO').textContent=ords.length;document.getElementById('OC').textContent=ords.length;let totCost=0,totSale=0;if(!ords.length){document.getElementById('OB').innerHTML=`<tr><td colspan="11"><div class="empty"><div class="empty-i">🛒</div><div>Inga artiklar i beställningslistan</div></div></td></tr>`;['OT','OS','OV','OM'].forEach(id=>document.getElementById(id).textContent='0,00\u202Fkr');document.getElementById('OM').textContent='—';return;}document.getElementById('OB').innerHTML=ords.map(a=>{const i=A.indexOf(a);if(!oQ[a.artNr])oQ[a.artNr]=Math.max(a.minStock,1);const q=oQ[a.artNr],cost=a.buyPrice||0,price=a.price||0,rowCost=q*cost,rowSale=q*price,rowVinst=rowSale-rowCost;totCost+=rowCost;totSale+=rowSale;const vc=rowVinst>0?'var(--green)':rowVinst<0?'var(--red)':'var(--tx3)';return`<tr><td><span class="an">${a.artNr}</span></td><td><span class="nm">${a.name}</span></td><td><span class="lv">${a.supplier||'—'}</span></td><td class="nc">${fn(a.stock-a.reserved)}</td><td class="nc oqi"><input type="number" min="1" value="${q}" onchange="sOQ('${a.artNr}',this.value)"></td><td class="nr" style="color:var(--red)">${fkz(cost)}</td><td class="nr" style="color:var(--red);font-weight:600">${fkz(rowCost)}</td><td class="nr" style="color:var(--cyan)">${fkz(price)}</td><td class="nr" style="color:var(--blue);font-weight:600">${fkz(rowSale)}</td><td class="nr" style="color:${vc};font-weight:700">${fkz(rowVinst)}</td><td><button class="rb" onclick="tO(${i})">✕</button></td></tr>`;}).join('');const totVinst=totSale-totCost;const margin=totSale>0?((totVinst/totSale)*100).toFixed(1)+'%':'—';document.getElementById('OT').textContent=fkz(totCost);document.getElementById('OS').textContent=fkz(totSale);document.getElementById('OV').textContent=fkz(totVinst);document.getElementById('OM').textContent=margin;}
+
+// ─── EXPORT/IMPORT JSON ───
+function expJSON(){const data=JSON.stringify({version:1,date:new Date().toISOString(),articles:A},null,2);const blob=new Blob([data],{type:'application/json'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='pdm_lager_'+new Date().toISOString().slice(0,10)+'.json';link.click();showToast('💾 Data exporterad!');}
+
+function impJSON(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const data=JSON.parse(e.target.result);if(data.articles&&Array.isArray(data.articles)){A=data.articles;saveData();ra();showToast('✅ '+A.length+' artiklar importerade!');}else{showToast('❌ Ogiltig fil');}}catch(err){showToast('❌ Kunde inte läsa filen');}};r.readAsText(file);input.value='';}
+
+// ─── DELA ───
+function buildShareText(){const ords=A.filter(a=>a.order);if(!ords.length)return null;let txt='🛒 BESTÄLLNINGSLISTA - PBA Solution AB\n';txt+='Datum: '+new Date().toLocaleDateString('sv-SE')+'\n\n';let totCost=0,totSale=0;ords.forEach(a=>{const q=oQ[a.artNr]||a.minStock,cost=a.buyPrice||0,price=a.price||0;totCost+=q*cost;totSale+=q*price;txt+=`• ${a.artNr} - ${a.name}\n  Antal: ${q} st | Ink: ${fkz(q*cost)} | Utpris: ${fkz(q*price)}\n`;});const vinst=totSale-totCost;txt+=`\n💰 Inköpskostnad: ${fkz(totCost)}`;txt+=`\n📈 Försäljning: ${fkz(totSale)}`;txt+=`\n✅ Vinst: ${fkz(vinst)}`;txt+=totSale>0?`\n📊 Marginal: ${((vinst/totSale)*100).toFixed(1)}%`:'';return txt;}
+
+function shareEmail(){const txt=buildShareText();if(!txt){showToast('Inga artiklar i listan');return;}const subj='Beställningslista PBA Solution AB '+new Date().toLocaleDateString('sv-SE');window.location.href='mailto:info@pbasolution.se?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(txt);}
+
+function shareSMS(){const txt=buildShareText();if(!txt){showToast('Inga artiklar i listan');return;}window.location.href='sms:?body='+encodeURIComponent(txt);}
+
+function shareWA(){const txt=buildShareText();if(!txt){showToast('Inga artiklar i listan');return;}window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');}
 
 function rS(){const tot=A.length;const ins=A.filter(a=>ss2(a)!=='ze').length;const zer=A.filter(a=>ss2(a)==='ze').length;const low=A.filter(a=>ss2(a)==='lo').length;const val=A.reduce((s,a)=>s+a.stock*(a.buyPrice||0),0);const utval=A.reduce((s,a)=>s+a.stock*(a.price||0),0);document.getElementById('CT').textContent=tot;document.getElementById('CI').textContent=ins;document.getElementById('CZ').textContent=zer;document.getElementById('CL2').textContent=low;document.getElementById('CV').textContent=val.toLocaleString('sv-SE',{maximumFractionDigits:0});document.getElementById('CU').textContent=utval.toLocaleString('sv-SE',{maximumFractionDigits:0});document.getElementById('HT').textContent=tot;document.getElementById('HV').textContent=val.toLocaleString('sv-SE',{maximumFractionDigits:0})+'\u202Fkr';document.getElementById('HU').textContent=utval.toLocaleString('sv-SE',{maximumFractionDigits:0})+'\u202Fkr';document.getElementById('HW').textContent=low+zer;document.getElementById('BI').style.width=(ins/tot*100)+'%';document.getElementById('BL').style.width=(low/tot*100)+'%';document.getElementById('BZ').style.width=(zer/tot*100)+'%';const al=document.getElementById('AL');const crit=A.filter(a=>ss2(a)==='ze').slice(0,3).map(a=>a.artNr).join(', ');if(zer>0){document.getElementById('AT').textContent=`${zer} artikel(ar) NOLLAGER (${crit}${zer>3?'…':''})`;al.classList.add('on');}else if(low>0){document.getElementById('AT').textContent=`${low} artikel(ar) under lagervarning.`;al.classList.add('on');}else al.classList.remove('on');}
 
@@ -553,6 +590,5 @@ document.querySelectorAll('.ov').forEach(el=>el.addEventListener('click',e=>{if(
 loadData();
 ra();
 </script>
-
 </body>
 </html>
