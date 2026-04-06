@@ -1,810 +1,794 @@
-import { useState, useCallback, useRef } from “react”;
+import { useState, useCallback, useRef } from "react";
 
-const DEF_CATS=[{id:“c1”,name:“Skär”,icon:“✂️”},{id:“c2”,name:“Pinfrässar”,icon:“🌀”},{id:“c3”,name:“Borrskaft”,icon:“💎”},{id:“c4”,name:“Gängtappar”,icon:“🔧”},{id:“c5”,name:“Fräskroppar”,icon:“🔨”},{id:“c6”,name:“Borr”,icon:“🔩”},{id:“c7”,name:“Skruvar”,icon:“🪛”},{id:“c8”,name:“Hållare”,icon:“🗜️”},{id:“c9”,name:“Sängar”,icon:“🛏️”},{id:“c10”,name:“Handskar”,icon:“🧤”},{id:“c11”,name:“Övrigt”,icon:“⚙️”}];
-const DEF_SUBS=[{id:“s1”,name:“HM-borr”,pid:“c6”},{id:“s2”,name:“Spiralborr”,pid:“c6”},{id:“s3”,name:“Carbide-borr”,pid:“c6”},{id:“s4”,name:“TiN-belagd”,pid:“c4”},{id:“s5”,name:“Maskinell”,pid:“c4”},{id:“s6”,name:“Wendeskär”,pid:“c1”},{id:“s7”,name:“HM-skär”,pid:“c1”},{id:“s8”,name:“Halvmånesfräs”,pid:“c2”}];
+const DEF_CATS=[{id:"c1",name:"Skär",icon:"✂️"},{id:"c2",name:"Pinfrässar",icon:"🌀"},{id:"c3",name:"Borrskaft",icon:"💎"},{id:"c4",name:"Gängtappar",icon:"🔧"},{id:"c5",name:"Fräskroppar",icon:"🔨"},{id:"c6",name:"Borr",icon:"🔩"},{id:"c7",name:"Skruvar",icon:"🪛"},{id:"c8",name:"Hållare",icon:"🗜️"},{id:"c9",name:"Sängar",icon:"🛏️"},{id:"c10",name:"Handskar",icon:"🧤"},{id:"c11",name:"Övrigt",icon:"⚙️"}];
+const DEF_SUBS=[{id:"s1",name:"HM-borr",pid:"c6"},{id:"s2",name:"Spiralborr",pid:"c6"},{id:"s3",name:"Carbide-borr",pid:"c6"},{id:"s4",name:"TiN-belagd",pid:"c4"},{id:"s5",name:"Maskinell",pid:"c4"},{id:"s6",name:"Wendeskär",pid:"c1"},{id:"s7",name:"HM-skär",pid:"c1"},{id:"s8",name:"Halvmånesfräs",pid:"c2"}];
 const DEF_PRODS=[
-{id:“p1”,artNr:“PDM391”,name:“APKT160408-HM CT5320”,supplier:“HANGZHOU CHAI”,price:138,buyPrice:0,stock:250,minStock:5,catId:“c1”,subId:“s6”,desc:“Wendeskär för stål och gjutjärn. CT5320 hårdmetall.”,img:””,images:[],specs:[{id:“s1”,param:“D”,value:“13.8”,unit:“mm”},{id:“s2”,param:“ap”,value:“4.76”,unit:“mm”},{id:“s3”,param:“R”,value:“0.8”,unit:“mm”}]},
-{id:“p2”,artNr:“PDM375”,name:“SDKT140408M-PM CT5320”,supplier:“HANGZHOU CHAI”,price:156,buyPrice:34,stock:170,minStock:10,catId:“c1”,subId:””,desc:””,img:””,images:[],specs:[{id:“s1”,param:“D”,value:“13.8”,unit:“mm”},{id:“s2”,param:“ap”,value:“10.3”,unit:“mm”},{id:“s3”,param:“S”,value:“4.2”,unit:“mm”},{id:“s4”,param:“bs”,value:“2.0”,unit:“mm”},{id:“s5”,param:“R”,value:“0.8”,unit:“mm”},{id:“s6”,param:“Grade”,value:“CT5320 / CT5420 / CT7420”,unit:””}]},
-{id:“p3”,artNr:“PDM379”,name:“APKT170508-EM CT5320”,supplier:“HANGZHOU CHAI”,price:147.4,buyPrice:19,stock:490,minStock:10,catId:“c1”,subId:“s6”,desc:“Positivgeometri för rostfritt och stål.”,img:””,images:[],specs:[]},
-{id:“p4”,artNr:“PDM390”,name:“LNMU0303ZER-MJ CT5320”,supplier:””,price:129,buyPrice:0,stock:350,minStock:5,catId:“c1”,subId:“s6”,desc:“Runda wendeskär med MJ-geometri.”,img:””,images:[],specs:[]},
-{id:“p5”,artNr:“PDM348”,name:“SNMU13T608-CM MZF40TN”,supplier:“Preciturn”,price:152.9,buyPrice:0,stock:420,minStock:10,catId:“c1”,subId:””,desc:””,img:””,images:[],specs:[]},
-{id:“p6”,artNr:“PDM345”,name:“SPMT120408-HW YS30”,supplier:“Preciturn”,price:147.4,buyPrice:0,stock:480,minStock:10,catId:“c1”,subId:””,desc:””,img:””,images:[],specs:[]},
-{id:“p7”,artNr:“PDM386”,name:“D16x55x110 R1-6T”,supplier:“HANGZHOU CHAI”,price:2840,buyPrice:0,stock:30,minStock:2,catId:“c2”,subId:””,desc:“Pinnfräs R1, 6 tänder, Ø16mm, 110mm.”,img:””,images:[],specs:[{id:“s1”,param:“Diameter”,value:“16”,unit:“mm”},{id:“s2”,param:“Tänder”,value:“6”,unit:””},{id:“s3”,param:“Total längd”,value:“110”,unit:“mm”},{id:“s4”,param:“Radie”,value:“1”,unit:“mm”}]},
-{id:“p8”,artNr:“PDM330”,name:“D16x50x110L 5F”,supplier:“Preciturn”,price:2420,buyPrice:537,stock:14,minStock:2,catId:“c2”,subId:“s8”,desc:“5-tandig pinnfräs Ø16mm.”,img:””,images:[],specs:[]},
-{id:“p9”,artNr:“PDM363”,name:“QDX-253-S1 M-F7024”,supplier:“Fengy”,price:1210,buyPrice:0,stock:32,minStock:2,catId:“c6”,subId:“s1”,desc:””,img:””,images:[],specs:[]},
-{id:“p10”,artNr:“PDM362”,name:“LDX-332-S1 M-F7024”,supplier:“Fengy”,price:1540,buyPrice:0,stock:20,minStock:2,catId:“c6”,subId:””,desc:””,img:””,images:[],specs:[]},
-{id:“p11”,artNr:“PDM358”,name:“DIN376 M24x3 160L TiN”,supplier:“Preciturn”,price:1815,buyPrice:8,stock:8,minStock:1,catId:“c4”,subId:“s4”,desc:“Maskinell gängtapp M24x3, 160mm.”,img:””,images:[],specs:[{id:“s1”,param:“Gäng”,value:“M24x3”,unit:””},{id:“s2”,param:“Längd”,value:“160”,unit:“mm”},{id:“s3”,param:“Beläggning”,value:“TiN”,unit:””}]},
-{id:“p12”,artNr:“PDM357”,name:“DIN376 M20x2.5 140L”,supplier:“Preciturn”,price:1386,buyPrice:8,stock:2,minStock:1,catId:“c4”,subId:“s5”,desc:“Maskinell gängtapp M20x2.5.”,img:””,images:[],specs:[]},
-{id:“p13”,artNr:“PDM381”,name:“CFM90SN-980A27R-13”,supplier:“HANGZHOU CHAI”,price:4873,buyPrice:641,stock:1,minStock:1,catId:“c5”,subId:””,desc:””,img:””,images:[],specs:[]},
-{id:“p14”,artNr:“PDM368”,name:“CCM90SV-6980A32R-11”,supplier:“HANGZHOU CHAI”,price:12210,buyPrice:5706,stock:2,minStock:1,catId:“c5”,subId:””,desc:””,img:””,images:[],specs:[]},
-{id:“p15”,artNr:“PDM321”,name:“Screw I60 M5x13”,supplier:“Preciturn”,price:17.6,buyPrice:1.73,stock:600,minStock:50,catId:“c7”,subId:””,desc:””,img:””,images:[],specs:[]},
-{id:“p16”,artNr:“PDM364”,name:“M2.5x6.5 Screws”,supplier:“Preciturn”,price:19.25,buyPrice:3,stock:100,minStock:20,catId:“c7”,subId:””,desc:””,img:””,images:[],specs:[]},
-{id:“p17”,artNr:“PDR252”,name:“PBA Tygghandskar Vinter M-L-XL”,supplier:””,price:151.8,buyPrice:0,stock:612,minStock:50,catId:“c10”,subId:””,desc:“Tygghandskar vinter, storlekar M/L/XL.”,img:””,images:[],specs:[]},
-{id:“p18”,artNr:“PDR225”,name:“PBA Skarhandskar S-M-XL”,supplier:“Eternity Safety”,price:47.85,buyPrice:13.33,stock:560,minStock:70,catId:“c10”,subId:””,desc:“EN388-certifierade skärhandskar.”,img:””,images:[],specs:[]},
-{id:“p19”,artNr:“PDM253”,name:“Mini OK Vise FK2-VT-T”,supplier:””,price:3179,buyPrice:0,stock:6,minStock:1,catId:“c8”,subId:””,desc:””,img:””,images:[],specs:[]},
-{id:“p20”,artNr:“PDR210”,name:“125x1x22.3 Kapskiva”,supplier:“FOSHAN SONGQI”,price:41.8,buyPrice:1.56,stock:475,minStock:20,catId:“c11”,subId:””,desc:””,img:””,images:[],specs:[]}
+  {id:"p1",artNr:"PDM391",name:"APKT160408-HM CT5320",supplier:"HANGZHOU CHAI",price:138,buyPrice:0,stock:250,minStock:5,catId:"c1",subId:"s6",desc:"Wendeskär för stål och gjutjärn. CT5320 hårdmetall.",img:"",images:[],specs:[{id:"s1",param:"D",value:"13.8",unit:"mm"},{id:"s2",param:"ap",value:"4.76",unit:"mm"},{id:"s3",param:"R",value:"0.8",unit:"mm"}]},
+  {id:"p2",artNr:"PDM375",name:"SDKT140408M-PM CT5320",supplier:"HANGZHOU CHAI",price:156,buyPrice:34,stock:170,minStock:10,catId:"c1",subId:"",desc:"",img:"",images:[],specs:[{id:"s1",param:"D",value:"13.8",unit:"mm"},{id:"s2",param:"ap",value:"10.3",unit:"mm"},{id:"s3",param:"S",value:"4.2",unit:"mm"},{id:"s4",param:"bs",value:"2.0",unit:"mm"},{id:"s5",param:"R",value:"0.8",unit:"mm"},{id:"s6",param:"Grade",value:"CT5320 / CT5420 / CT7420",unit:""}]},
+  {id:"p3",artNr:"PDM379",name:"APKT170508-EM CT5320",supplier:"HANGZHOU CHAI",price:147.4,buyPrice:19,stock:490,minStock:10,catId:"c1",subId:"s6",desc:"Positivgeometri för rostfritt och stål.",img:"",images:[],specs:[]},
+  {id:"p4",artNr:"PDM390",name:"LNMU0303ZER-MJ CT5320",supplier:"",price:129,buyPrice:0,stock:350,minStock:5,catId:"c1",subId:"s6",desc:"Runda wendeskär med MJ-geometri.",img:"",images:[],specs:[]},
+  {id:"p5",artNr:"PDM348",name:"SNMU13T608-CM MZF40TN",supplier:"Preciturn",price:152.9,buyPrice:0,stock:420,minStock:10,catId:"c1",subId:"",desc:"",img:"",images:[],specs:[]},
+  {id:"p6",artNr:"PDM345",name:"SPMT120408-HW YS30",supplier:"Preciturn",price:147.4,buyPrice:0,stock:480,minStock:10,catId:"c1",subId:"",desc:"",img:"",images:[],specs:[]},
+  {id:"p7",artNr:"PDM386",name:"D16x55x110 R1-6T",supplier:"HANGZHOU CHAI",price:2840,buyPrice:0,stock:30,minStock:2,catId:"c2",subId:"",desc:"Pinnfräs R1, 6 tänder, Ø16mm, 110mm.",img:"",images:[],specs:[{id:"s1",param:"Diameter",value:"16",unit:"mm"},{id:"s2",param:"Tänder",value:"6",unit:""},{id:"s3",param:"Total längd",value:"110",unit:"mm"},{id:"s4",param:"Radie",value:"1",unit:"mm"}]},
+  {id:"p8",artNr:"PDM330",name:"D16x50x110L 5F",supplier:"Preciturn",price:2420,buyPrice:537,stock:14,minStock:2,catId:"c2",subId:"s8",desc:"5-tandig pinnfräs Ø16mm.",img:"",images:[],specs:[]},
+  {id:"p9",artNr:"PDM363",name:"QDX-253-S1 M-F7024",supplier:"Fengy",price:1210,buyPrice:0,stock:32,minStock:2,catId:"c6",subId:"s1",desc:"",img:"",images:[],specs:[]},
+  {id:"p10",artNr:"PDM362",name:"LDX-332-S1 M-F7024",supplier:"Fengy",price:1540,buyPrice:0,stock:20,minStock:2,catId:"c6",subId:"",desc:"",img:"",images:[],specs:[]},
+  {id:"p11",artNr:"PDM358",name:"DIN376 M24x3 160L TiN",supplier:"Preciturn",price:1815,buyPrice:8,stock:8,minStock:1,catId:"c4",subId:"s4",desc:"Maskinell gängtapp M24x3, 160mm.",img:"",images:[],specs:[{id:"s1",param:"Gäng",value:"M24x3",unit:""},{id:"s2",param:"Längd",value:"160",unit:"mm"},{id:"s3",param:"Beläggning",value:"TiN",unit:""}]},
+  {id:"p12",artNr:"PDM357",name:"DIN376 M20x2.5 140L",supplier:"Preciturn",price:1386,buyPrice:8,stock:2,minStock:1,catId:"c4",subId:"s5",desc:"Maskinell gängtapp M20x2.5.",img:"",images:[],specs:[]},
+  {id:"p13",artNr:"PDM381",name:"CFM90SN-980A27R-13",supplier:"HANGZHOU CHAI",price:4873,buyPrice:641,stock:1,minStock:1,catId:"c5",subId:"",desc:"",img:"",images:[],specs:[]},
+  {id:"p14",artNr:"PDM368",name:"CCM90SV-6980A32R-11",supplier:"HANGZHOU CHAI",price:12210,buyPrice:5706,stock:2,minStock:1,catId:"c5",subId:"",desc:"",img:"",images:[],specs:[]},
+  {id:"p15",artNr:"PDM321",name:"Screw I60 M5x13",supplier:"Preciturn",price:17.6,buyPrice:1.73,stock:600,minStock:50,catId:"c7",subId:"",desc:"",img:"",images:[],specs:[]},
+  {id:"p16",artNr:"PDM364",name:"M2.5x6.5 Screws",supplier:"Preciturn",price:19.25,buyPrice:3,stock:100,minStock:20,catId:"c7",subId:"",desc:"",img:"",images:[],specs:[]},
+  {id:"p17",artNr:"PDR252",name:"PBA Tygghandskar Vinter M-L-XL",supplier:"",price:151.8,buyPrice:0,stock:612,minStock:50,catId:"c10",subId:"",desc:"Tygghandskar vinter, storlekar M/L/XL.",img:"",images:[],specs:[]},
+  {id:"p18",artNr:"PDR225",name:"PBA Skarhandskar S-M-XL",supplier:"Eternity Safety",price:47.85,buyPrice:13.33,stock:560,minStock:70,catId:"c10",subId:"",desc:"EN388-certifierade skärhandskar.",img:"",images:[],specs:[]},
+  {id:"p19",artNr:"PDM253",name:"Mini OK Vise FK2-VT-T",supplier:"",price:3179,buyPrice:0,stock:6,minStock:1,catId:"c8",subId:"",desc:"",img:"",images:[],specs:[]},
+  {id:"p20",artNr:"PDR210",name:"125x1x22.3 Kapskiva",supplier:"FOSHAN SONGQI",price:41.8,buyPrice:1.56,stock:475,minStock:20,catId:"c11",subId:"",desc:"",img:"",images:[],specs:[]}
 ];
-const DEF_ADMIN={id:“admin-0”,email:“admin@pbasolution.se”,password:“Admin2024!”,firstName:“Admin”,lastName:“PBA”,company:“PBA Solution AB”,role:“admin”,approved:true,registered:new Date().toISOString()};
-const PAY=[{id:“inv30”,label:“Faktura 30 dagar”,desc:“Betalning inom 30 dagar via bankgiro”,icon:“🧾”},{id:“inv14”,label:“Faktura 14 dagar”,desc:“1% kassarabatt vid betalning inom 14 dagar”,icon:“📄”},{id:“pre”,label:“Förskottsbetalning”,desc:“2% rabatt vid betalning före leverans”,icon:“💳”}];
+const DEF_ADMIN={id:"admin-0",email:"admin@pbasolution.se",password:"Admin2024!",firstName:"Admin",lastName:"PBA",company:"PBA Solution AB",role:"admin",approved:true,registered:new Date().toISOString()};
+const PAY=[{id:"inv30",label:"Faktura 30 dagar",desc:"Betalning inom 30 dagar via bankgiro",icon:"🧾"},{id:"inv14",label:"Faktura 14 dagar",desc:"1% kassarabatt vid betalning inom 14 dagar",icon:"📄"},{id:"pre",label:"Förskottsbetalning",desc:"2% rabatt vid betalning före leverans",icon:"💳"}];
 
-const uid=()=>“id”+Date.now()+Math.random().toString(36).slice(2,6);
-const kr=n=>n?n.toLocaleString(“sv-SE”,{minimumFractionDigits:2,maximumFractionDigits:2})+” kr”:“Pris på begäran”;
-const kr2=n=>n.toLocaleString(“sv-SE”,{minimumFractionDigits:2,maximumFractionDigits:2})+” kr”;
-const st=p=>p.stock<=0?“ze”:p.minStock>0&&p.stock<=p.minStock?“lo”:“ok”;
+const uid=()=>"id"+Date.now()+Math.random().toString(36).slice(2,6);
+const kr=n=>n?n.toLocaleString("sv-SE",{minimumFractionDigits:2,maximumFractionDigits:2})+" kr":"Pris på begäran";
+const kr2=n=>n.toLocaleString("sv-SE",{minimumFractionDigits:2,maximumFractionDigits:2})+" kr";
+const st=p=>p.stock<=0?"ze":p.minStock>0&&p.stock<=p.minStock?"lo":"ok";
 
-const N=”#0f172a”,N2=”#1e293b”,BL=”#2563eb”,BLL=”#eff6ff”,BLM=”#bfdbfe”,
-GR=”#16a34a”,GRL=”#f0fdf4”,RD=”#dc2626”,RDL=”#fff5f5”,RDM=”#fecaca”,
-AM=”#d97706”,AML=”#fffbeb”,AMM=”#fde68a”,
-INK=”#0a0f1e”,SL=”#4a5578”,MU=”#8892a4”,GH=”#c4cad6”,LN=”#e8eaf0”,BG=”#f4f5f8”,S2=”#f8f9fb”;
+const N="#0f172a",N2="#1e293b",BL="#2563eb",BLL="#eff6ff",BLM="#bfdbfe",
+  GR="#16a34a",GRL="#f0fdf4",RD="#dc2626",RDL="#fff5f5",RDM="#fecaca",
+  AM="#d97706",AML="#fffbeb",AMM="#fde68a",
+  INK="#0a0f1e",SL="#4a5578",MU="#8892a4",GH="#c4cad6",LN="#e8eaf0",BG="#f4f5f8",S2="#f8f9fb";
 
-const b=(bg,c=”#fff”,x={})=>({background:bg,color:c,border:“none”,borderRadius:8,padding:“0 16px”,height:38,fontWeight:600,fontSize:13,cursor:“pointer”,…x});
-const inp=(x={})=>({height:42,border:`1.5px solid ${LN}`,borderRadius:8,padding:“0 12px”,fontSize:14,color:INK,background:S2,outline:“none”,width:“100%”,…x});
+const b=(bg,c="#fff",x={})=>({background:bg,color:c,border:"none",borderRadius:8,padding:"0 16px",height:38,fontWeight:600,fontSize:13,cursor:"pointer",...x});
+const inp=(x={})=>({height:42,border:`1.5px solid ${LN}`,borderRadius:8,padding:"0 12px",fontSize:14,color:INK,background:S2,outline:"none",width:"100%",...x});
 
-function FI({label,children,full}){return <div style={{display:“flex”,flexDirection:“column”,gap:5,…(full?{gridColumn:“1/-1”}:{})}}><label style={{fontSize:10.5,fontWeight:600,textTransform:“uppercase”,letterSpacing:.8,color:SL}}>{label}</label>{children}</div>;}
+function FI({label,children,full}){return <div style={{display:"flex",flexDirection:"column",gap:5,...(full?{gridColumn:"1/-1"}:{})}}><label style={{fontSize:10.5,fontWeight:600,textTransform:"uppercase",letterSpacing:.8,color:SL}}>{label}</label>{children}</div>;}
 
 export default function App(){
-const [db,setDb]=useState(()=>{try{const r=localStorage.getItem(“pba_v4”);if(r)return JSON.parse(r);}catch(e){}return{cats:[…DEF_CATS],subs:[…DEF_SUBS],products:[…DEF_PRODS],users:[{…DEF_ADMIN}],orders:[]};});
-const [cu,setCu]=useState(null);
-const [cart,setCart]=useState({});
-const [sec,setSec]=useState(“shop”);
-const [aSec,setASec]=useState(“dash”);
-const [aCat,setACat]=useState(“all”);
-const [aSub,setASub]=useState(“all”);
-const [sq,setSq]=useState(””);
-const [sort,setSort]=useState(“artNr”);
-const [fIn,setFIn]=useState(false);const [fLo,setFLo]=useState(false);const [fZe,setFZe]=useState(false);
-const [pMin,setPMin]=useState(””);const [pMax,setPMax]=useState(””);
-const [view,setView]=useState(“g”);
-const [cartOpen,setCartOpen]=useState(false);
-const [cartNote,setCartNote]=useState(””);
-const [prodM,setProdM]=useState(null);const [pdQty,setPdQty]=useState(1);
-const [quoteOpen,setQuoteOpen]=useState(false);
-const [selPay,setSelPay]=useState(“inv30”);
-const [editP,setEditP]=useState(null);const [editOpen,setEditOpen]=useState(false);
-const [inqM,setInqM]=useState(null);
-const [catM,setCatM]=useState(null);const [subM,setSubM]=useState(null);
-const [toast,setToast]=useState(null);const tRef=useRef(null);
-const [succOpen,setSuccOpen]=useState(false);
-const [lEmail,setLEmail]=useState(””);const [lPass,setLPass]=useState(””);const [lErr,setLErr]=useState(””);
-const [aTab,setATab]=useState(“login”);
-const [rF,setRF]=useState(””);const [rL,setRL]=useState(””);const [rC,setRC]=useState(””);
-const [rE,setRE]=useState(””);const [rPh,setRPh]=useState(””);const [rO,setRO]=useState(””);
-const [rPs,setRPs]=useState(””);const [rErr,setRErr]=useState(””);const [rOk,setROk]=useState(false);
-const [qN,setQN]=useState(””);const [qC,setQC]=useState(””);const [qE,setQE]=useState(””);
-const [qPh,setQPh]=useState(””);const [qO,setQO]=useState(””);const [qD,setQD]=useState(””);
-const [qA,setQA]=useState(””);const [qM,setQM]=useState(””);
+  const [db,setDb]=useState(()=>{try{const r=localStorage.getItem("pba_v4");if(r)return JSON.parse(r);}catch(e){}return{cats:[...DEF_CATS],subs:[...DEF_SUBS],products:[...DEF_PRODS],users:[{...DEF_ADMIN}],orders:[]};});
+  const [cu,setCu]=useState(null);
+  const [cart,setCart]=useState({});
+  const [sec,setSec]=useState("shop");
+  const [aSec,setASec]=useState("dash");
+  const [aCat,setACat]=useState("all");
+  const [aSub,setASub]=useState("all");
+  const [sq,setSq]=useState("");
+  const [sort,setSort]=useState("artNr");
+  const [fIn,setFIn]=useState(false);const [fLo,setFLo]=useState(false);const [fZe,setFZe]=useState(false);
+  const [pMin,setPMin]=useState("");const [pMax,setPMax]=useState("");
+  const [view,setView]=useState("g");
+  const [cartOpen,setCartOpen]=useState(false);
+  const [cartNote,setCartNote]=useState("");
+  const [prodM,setProdM]=useState(null);const [pdQty,setPdQty]=useState(1);
+  const [quoteOpen,setQuoteOpen]=useState(false);
+  const [selPay,setSelPay]=useState("inv30");
+  const [editP,setEditP]=useState(null);const [editOpen,setEditOpen]=useState(false);
+  const [inqM,setInqM]=useState(null);
+  const [catM,setCatM]=useState(null);const [subM,setSubM]=useState(null);
+  const [toast,setToast]=useState(null);const tRef=useRef(null);
+  const [succOpen,setSuccOpen]=useState(false);
+  const [lEmail,setLEmail]=useState("");const [lPass,setLPass]=useState("");const [lErr,setLErr]=useState("");
+  const [aTab,setATab]=useState("login");
+  const [rF,setRF]=useState("");const [rL,setRL]=useState("");const [rC,setRC]=useState("");
+  const [rE,setRE]=useState("");const [rPh,setRPh]=useState("");const [rO,setRO]=useState("");
+  const [rPs,setRPs]=useState("");const [rErr,setRErr]=useState("");const [rOk,setROk]=useState(false);
+  const [qN,setQN]=useState("");const [qC,setQC]=useState("");const [qE,setQE]=useState("");
+  const [qPh,setQPh]=useState("");const [qO,setQO]=useState("");const [qD,setQD]=useState("");
+  const [qA,setQA]=useState("");const [qM,setQM]=useState("");
 
-const save=useCallback(d=>{try{localStorage.setItem(“pba_v4”,JSON.stringify(d));}catch(e){};},[]);
-const upd=useCallback(fn=>setDb(d=>{const nd=fn(d);save(nd);return nd;}),[save]);
-const toast2=(msg,type=””)=>{setToast({msg,type});clearTimeout(tRef.current);tRef.current=setTimeout(()=>setToast(null),2600);};
-const catBy=id=>db.cats.find(c=>c.id===id)||{name:“Övrigt”,icon:“⚙️”};
-const subBy=id=>db.subs.find(s=>s.id===id)||null;
-const cTot=()=>Object.values(cart).reduce((s,q)=>s+q,0);
-const cVal=()=>Object.entries(cart).reduce((s,[an,q])=>{const p=db.products.find(x=>x.artNr===an);return s+(p&&p.price?p.price*q:0);},0);
-const pend=()=>db.users.filter(u=>!u.approved&&u.role!==“admin”).length;
-const newI=()=>db.orders.filter(o=>o.status===“Ny”).length;
+  const save=useCallback(d=>{try{localStorage.setItem("pba_v4",JSON.stringify(d));}catch(e){};},[]);
+  const upd=useCallback(fn=>setDb(d=>{const nd=fn(d);save(nd);return nd;}),[save]);
+  const toast2=(msg,type="")=>{setToast({msg,type});clearTimeout(tRef.current);tRef.current=setTimeout(()=>setToast(null),2600);};
+  const catBy=id=>db.cats.find(c=>c.id===id)||{name:"Övrigt",icon:"⚙️"};
+  const subBy=id=>db.subs.find(s=>s.id===id)||null;
+  const cTot=()=>Object.values(cart).reduce((s,q)=>s+q,0);
+  const cVal=()=>Object.entries(cart).reduce((s,[an,q])=>{const p=db.products.find(x=>x.artNr===an);return s+(p&&p.price?p.price*q:0);},0);
+  const pend=()=>db.users.filter(u=>!u.approved&&u.role!=="admin").length;
+  const newI=()=>db.orders.filter(o=>o.status==="Ny").length;
 
-const doLogin=()=>{
-const u=db.users.find(x=>x.email.toLowerCase()===lEmail.toLowerCase()&&x.password===lPass);
-if(!u){setLErr(“Fel e-post eller lösenord.”);return;}
-if(!u.approved){setLErr(“Kontot väntar på godkännande.”);return;}
-setCu(u);setLErr(””);
-};
-const doReg=()=>{
-if(!rF||!rL||!rC||!rE||!rPs){setRErr(“Fyll i alla obligatoriska fält.”);return;}
-if(rPs.length<6){setRErr(“Lösenordet måste vara minst 6 tecken.”);return;}
-if(db.users.find(u=>u.email.toLowerCase()===rE.toLowerCase())){setRErr(“E-postadressen används redan.”);return;}
-upd(d=>({…d,users:[…d.users,{id:uid(),firstName:rF,lastName:rL,company:rC,email:rE,phone:rPh,orgNr:rO,password:rPs,role:“customer”,approved:false,registered:new Date().toISOString()}]}));
-setRErr(””);setROk(true);
-};
+  const doLogin=()=>{
+    const u=db.users.find(x=>x.email.toLowerCase()===lEmail.toLowerCase()&&x.password===lPass);
+    if(!u){setLErr("Fel e-post eller lösenord.");return;}
+    if(!u.approved){setLErr("Kontot väntar på godkännande.");return;}
+    setCu(u);setLErr("");
+  };
+  const doReg=()=>{
+    if(!rF||!rL||!rC||!rE||!rPs){setRErr("Fyll i alla obligatoriska fält.");return;}
+    if(rPs.length<6){setRErr("Lösenordet måste vara minst 6 tecken.");return;}
+    if(db.users.find(u=>u.email.toLowerCase()===rE.toLowerCase())){setRErr("E-postadressen används redan.");return;}
+    upd(d=>({...d,users:[...d.users,{id:uid(),firstName:rF,lastName:rL,company:rC,email:rE,phone:rPh,orgNr:rO,password:rPs,role:"customer",approved:false,registered:new Date().toISOString()}]}));
+    setRErr("");setROk(true);
+  };
 
-const addCart=(an,qty=1)=>{setCart(c=>({…c,[an]:(c[an]||0)+qty}));toast2(an+” tillagd”,“ok”);};
-const chQ=(an,d)=>setCart(c=>{const nq=Math.max(0,(c[an]||0)+d);if(!nq){const nc={…c};delete nc[an];return nc;}return{…c,[an]:nq};});
-const rmC=(an)=>setCart(c=>{const nc={…c};delete nc[an];return nc;});
+  const addCart=(an,qty=1)=>{setCart(c=>({...c,[an]:(c[an]||0)+qty}));toast2(an+" tillagd","ok");};
+  const chQ=(an,d)=>setCart(c=>{const nq=Math.max(0,(c[an]||0)+d);if(!nq){const nc={...c};delete nc[an];return nc;}return{...c,[an]:nq};});
+  const rmC=(an)=>setCart(c=>{const nc={...c};delete nc[an];return nc;});
 
-const openQuote=()=>{
-if(!Object.keys(cart).length){toast2(“Varukorgen är tom”);return;}
-setCartOpen(false);
-if(cu){setQN(cu.firstName+” “+cu.lastName);setQC(cu.company||””);setQE(cu.email||””);setQPh(cu.phone||””);}
-setQuoteOpen(true);
-};
-const sendQuote=()=>{
-if(!qN||!qE){toast2(“Namn och e-post krävs”,“err”);return;}
-const pm=PAY.find(m=>m.id===selPay);
-const items=Object.entries(cart).filter(([,q])=>q>0).map(([an,q])=>{const p=db.products.find(x=>x.artNr===an);return{artNr:an,name:p?p.name:””,qty:q,price:p?p.price:0,lineTotal:(p?p.price:0)*q};});
-const tot=items.reduce((s,i)=>s+(i.lineTotal||0),0);
-let body=`OFFERTFÖRFRÅGAN — PBA Solution AB\nDatum: ${new Date().toLocaleDateString("sv-SE")}\n\nKontakt: ${qN}${qC?"\nFöretag: "+qC:""}\nE-post: ${qE}${qPh?"\nTel: "+qPh:""}\n\nBetalning: ${pm?pm.label:""}\n\nArtiklar:\n`;
-items.forEach(i=>{body+=`• ${i.artNr} — ${i.name}  ${i.qty} st${i.price?" | "+kr2(i.price)+" | "+kr2(i.lineTotal):""}\n`;});
-if(tot>0)body+=`\nTotalt (exkl. moms): ${kr2(tot)}`;
-if(cartNote)body+=`\n\nNotering: ${cartNote}`;
-if(qM)body+=`\n\nMeddelande: ${qM}`;
-const o={id:uid(),userId:cu?cu.id:null,customerName:qN,company:qC,email:qE,phone:qPh,items,totalValue:tot,payMethod:selPay,note:cartNote,message:qM,status:“Ny”,date:new Date().toISOString()};
-upd(d=>({…d,orders:[…d.orders,o]}));
-window.location.href=`mailto:info@pbasolution.se?subject=${encodeURIComponent("Offertförfrågan "+new Date().toLocaleDateString("sv-SE")+" — "+qN)}&body=${encodeURIComponent(body)}`;
-setQuoteOpen(false);setCart({});setCartNote(””);setSuccOpen(true);
-};
+  const openQuote=()=>{
+    if(!Object.keys(cart).length){toast2("Varukorgen är tom");return;}
+    setCartOpen(false);
+    if(cu){setQN(cu.firstName+" "+cu.lastName);setQC(cu.company||"");setQE(cu.email||"");setQPh(cu.phone||"");}
+    setQuoteOpen(true);
+  };
+  const sendQuote=()=>{
+    if(!qN||!qE){toast2("Namn och e-post krävs","err");return;}
+    const pm=PAY.find(m=>m.id===selPay);
+    const items=Object.entries(cart).filter(([,q])=>q>0).map(([an,q])=>{const p=db.products.find(x=>x.artNr===an);return{artNr:an,name:p?p.name:"",qty:q,price:p?p.price:0,lineTotal:(p?p.price:0)*q};});
+    const tot=items.reduce((s,i)=>s+(i.lineTotal||0),0);
+    let body=`OFFERTFÖRFRÅGAN — PBA Solution AB\nDatum: ${new Date().toLocaleDateString("sv-SE")}\n\nKontakt: ${qN}${qC?"\nFöretag: "+qC:""}\nE-post: ${qE}${qPh?"\nTel: "+qPh:""}\n\nBetalning: ${pm?pm.label:""}\n\nArtiklar:\n`;
+    items.forEach(i=>{body+=`• ${i.artNr} — ${i.name}  ${i.qty} st${i.price?" | "+kr2(i.price)+" | "+kr2(i.lineTotal):""}\n`;});
+    if(tot>0)body+=`\nTotalt (exkl. moms): ${kr2(tot)}`;
+    if(cartNote)body+=`\n\nNotering: ${cartNote}`;
+    if(qM)body+=`\n\nMeddelande: ${qM}`;
+    const o={id:uid(),userId:cu?cu.id:null,customerName:qN,company:qC,email:qE,phone:qPh,items,totalValue:tot,payMethod:selPay,note:cartNote,message:qM,status:"Ny",date:new Date().toISOString()};
+    upd(d=>({...d,orders:[...d.orders,o]}));
+    window.location.href=`mailto:info@pbasolution.se?subject=${encodeURIComponent("Offertförfrågan "+new Date().toLocaleDateString("sv-SE")+" — "+qN)}&body=${encodeURIComponent(body)}`;
+    setQuoteOpen(false);setCart({});setCartNote("");setSuccOpen(true);
+  };
 
-const saveP=data=>{
-const mainImg=data.img||(data.images&&data.images.length>0?data.images[0].src:””);
-const final={…data,img:mainImg,price:parseFloat(data.price)||0,buyPrice:parseFloat(data.buyPrice)||0,stock:parseInt(data.stock)||0,minStock:parseInt(data.minStock)||5};
-if(final.id&&db.products.find(p=>p.id===final.id)){upd(d=>({…d,products:d.products.map(p=>p.id===final.id?final:p)}));}
-else{upd(d=>({…d,products:[…d.products,{…final,id:uid()}]}));}
-setEditOpen(false);toast2(“Artikel sparad”,“ok”);
-};
-const delP=id=>{if(!confirm(“Ta bort artikel?”))return;upd(d=>({…d,products:d.products.filter(p=>p.id!==id)}));setEditOpen(false);toast2(“Borttagen”);};
+  const saveP=data=>{
+    const mainImg=data.img||(data.images&&data.images.length>0?data.images[0].src:"");
+    const final={...data,img:mainImg,price:parseFloat(data.price)||0,buyPrice:parseFloat(data.buyPrice)||0,stock:parseInt(data.stock)||0,minStock:parseInt(data.minStock)||5};
+    if(final.id&&db.products.find(p=>p.id===final.id)){upd(d=>({...d,products:d.products.map(p=>p.id===final.id?final:p)}));}
+    else{upd(d=>({...d,products:[...d.products,{...final,id:uid()}]}));}
+    setEditOpen(false);toast2("Artikel sparad","ok");
+  };
+  const delP=id=>{if(!confirm("Ta bort artikel?"))return;upd(d=>({...d,products:d.products.filter(p=>p.id!==id)}));setEditOpen(false);toast2("Borttagen");};
 
-const fProds=()=>{
-const q=sq.toLowerCase();
-let list=db.products.filter(p=>{
-if(aCat!==“all”&&p.catId!==aCat)return false;
-if(aSub!==“all”&&p.subId!==aSub)return false;
-if(q&&!p.artNr.toLowerCase().includes(q)&&!p.name.toLowerCase().includes(q)&&!(p.supplier||””).toLowerCase().includes(q))return false;
-const pmn=parseFloat(pMin)||0,pmx=parseFloat(pMax)||Infinity;
-if(p.price>0&&(p.price<pmn||p.price>pmx))return false;
-if(fIn&&st(p)!==“ok”)return false;
-if(fLo&&st(p)!==“lo”)return false;
-if(fZe&&st(p)!==“ze”)return false;
-return true;
-});
-return list.sort((a,b)=>sort===“name”?a.name.localeCompare(b.name,“sv”):sort===“price-asc”?(a.price||0)-(b.price||0):sort===“price-desc”?(b.price||0)-(a.price||0):sort===“stock”?b.stock-a.stock:a.artNr.localeCompare(b.artNr,“sv”));
-};
+  const fProds=()=>{
+    const q=sq.toLowerCase();
+    let list=db.products.filter(p=>{
+      if(aCat!=="all"&&p.catId!==aCat)return false;
+      if(aSub!=="all"&&p.subId!==aSub)return false;
+      if(q&&!p.artNr.toLowerCase().includes(q)&&!p.name.toLowerCase().includes(q)&&!(p.supplier||"").toLowerCase().includes(q))return false;
+      const pmn=parseFloat(pMin)||0,pmx=parseFloat(pMax)||Infinity;
+      if(p.price>0&&(p.price<pmn||p.price>pmx))return false;
+      if(fIn&&st(p)!=="ok")return false;
+      if(fLo&&st(p)!=="lo")return false;
+      if(fZe&&st(p)!=="ze")return false;
+      return true;
+    });
+    return list.sort((a,b)=>sort==="name"?a.name.localeCompare(b.name,"sv"):sort==="price-asc"?(a.price||0)-(b.price||0):sort==="price-desc"?(b.price||0)-(a.price||0):sort==="stock"?b.stock-a.stock:a.artNr.localeCompare(b.artNr,"sv"));
+  };
 
-if(!cu)return <Auth aTab={aTab} setATab={setATab} lEmail={lEmail} setLEmail={setLEmail} lPass={lPass} setLPass={setLPass} lErr={lErr} doLogin={doLogin} rF={rF} setRF={setRF} rL={rL} setRL={setRL} rC={rC} setRC={setRC} rE={rE} setRE={setRE} rPh={rPh} setRPh={setRPh} rO={rO} setRO={setRO} rPs={rPs} setRPs={setRPs} rErr={rErr} rOk={rOk} doReg={doReg}/>;
-const prods=fProds();
+  if(!cu)return <Auth aTab={aTab} setATab={setATab} lEmail={lEmail} setLEmail={setLEmail} lPass={lPass} setLPass={setLPass} lErr={lErr} doLogin={doLogin} rF={rF} setRF={setRF} rL={rL} setRL={setRL} rC={rC} setRC={setRC} rE={rE} setRE={setRE} rPh={rPh} setRPh={setRPh} rO={rO} setRO={setRO} rPs={rPs} setRPs={setRPs} rErr={rErr} rOk={rOk} doReg={doReg}/>;
+  const prods=fProds();
 
-return <div style={{minHeight:“100vh”,background:BG,fontFamily:“Inter,sans-serif”,fontSize:14,color:INK}}>
-{/* TOPBAR */}
-<div style={{background:N,height:36,display:“flex”,alignItems:“center”}}>
-<div style={{maxWidth:1400,margin:“0 auto”,padding:“0 22px”,width:“100%”,display:“flex”,justifyContent:“space-between”,alignItems:“center”}}>
-<div style={{display:“flex”,gap:18,fontSize:12,color:“rgba(255,255,255,.4)”}}>
-<span>📦 Fri frakt >2 000 kr</span><span>⚡ Lev. 2–5 dagar</span>
-</div>
-<span style={{color:“rgba(255,255,255,.4)”,fontSize:12,cursor:“pointer”}} onClick={()=>{setCu(null);setCart({});}}>Logga ut</span>
-</div>
-</div>
-{/* HEADER */}
-<div style={{background:”#fff”,borderBottom:`1px solid ${LN}`,position:“sticky”,top:0,zIndex:200,boxShadow:“0 1px 4px rgba(0,0,0,.06)”}}>
-<div style={{maxWidth:1400,margin:“0 auto”,padding:“0 22px”,height:64,display:“flex”,alignItems:“center”,gap:16}}>
-<div style={{display:“flex”,alignItems:“center”,gap:11,cursor:“pointer”,flexShrink:0}} onClick={()=>setSec(“shop”)}>
-<div style={{width:40,height:40,background:`linear-gradient(135deg,${N},${N2})`,borderRadius:10,display:“flex”,alignItems:“center”,justifyContent:“center”,fontFamily:“Syne,sans-serif”,fontWeight:800,fontSize:18,color:”#c8922a”}}>P</div>
-<div><div style={{fontFamily:“Syne,sans-serif”,fontWeight:800,fontSize:16,color:INK}}>PBA Solution</div><div style={{fontSize:10,color:MU,letterSpacing:.5,textTransform:“uppercase”}}>B2B Webshop</div></div>
-</div>
-<div style={{flex:1,maxWidth:460,position:“relative”}}>
-<span style={{position:“absolute”,left:11,top:“50%”,transform:“translateY(-50%)”,color:GH}}>🔍</span>
-<input value={sq} onChange={e=>setSq(e.target.value)} placeholder=“Sök artikelnr, namn…” style={{…inp(),paddingLeft:34,height:40}}/>
-</div>
-<div style={{marginLeft:“auto”,display:“flex”,gap:8,alignItems:“center”}}>
-<button onClick={()=>setCartOpen(true)} style={{position:“relative”,…b(”#fff”,INK),border:`1.5px solid ${LN}`,width:42,padding:0,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:18}}>
-🛒
-{cTot()>0&&<span style={{position:“absolute”,top:-5,right:-5,background:RD,color:”#fff”,borderRadius:“50%”,width:18,height:18,fontSize:9,fontWeight:700,display:“flex”,alignItems:“center”,justifyContent:“center”,border:“2px solid #fff”}}>{cTot()}</span>}
-</button>
-<button onClick={openQuote} style={{…b(BL),boxShadow:“0 2px 8px rgba(37,99,235,.28)”}}>📧 Offert</button>
-<div style={{display:“flex”,alignItems:“center”,gap:8,padding:“4px 12px 4px 4px”,border:`1.5px solid ${LN}`,borderRadius:8,background:”#fff”}}>
-<div style={{width:30,height:30,borderRadius:“50%”,background:`linear-gradient(135deg,${cu.role==="admin"?N:BL},${cu.role==="admin"?N2:"#1d4ed8"})`,display:“flex”,alignItems:“center”,justifyContent:“center”,color:”#fff”,fontWeight:700,fontSize:12}}>{cu.firstName[0]}{cu.lastName[0]}</div>
-<div><div style={{fontSize:13,fontWeight:600}}>{cu.firstName}</div><div style={{fontSize:10,color:MU,textTransform:“uppercase”}}>{cu.role===“admin”?“Admin”:“Kund”}</div></div>
-</div>
-</div>
-</div>
-</div>
-{/* NAV */}
-<div style={{background:”#fff”,borderBottom:`1px solid ${LN}`}}>
-<div style={{maxWidth:1400,margin:“0 auto”,padding:“0 22px”,display:“flex”,height:42,alignItems:“center”,gap:2}}>
-{[[“shop”,“🏪 Butik”],[“orders”,“📋 Ordrar”],…(cu.role===“admin”?[[“admin”,“⚙️ Admin”]]:[])]
-.map(([s,l])=><div key={s} onClick={()=>setSec(s)} style={{height:42,display:“flex”,alignItems:“center”,gap:5,padding:“0 13px”,fontSize:13,fontWeight:sec===s?700:500,color:sec===s?N:MU,borderBottom:sec===s?`2px solid ${N}`:“2px solid transparent”,cursor:“pointer”,userSelect:“none”}}>
-{l}
-{s===“admin”&&(pend()+newI())>0&&<span style={{background:AM,color:”#fff”,borderRadius:10,fontSize:9.5,padding:“1px 5px”}}>{pend()+newI()}</span>}
-</div>)}
-</div>
-</div>
+  return <div style={{minHeight:"100vh",background:BG,fontFamily:"Inter,sans-serif",fontSize:14,color:INK}}>
+    {/* TOPBAR */}
+    <div style={{background:N,height:36,display:"flex",alignItems:"center"}}>
+      <div style={{maxWidth:1400,margin:"0 auto",padding:"0 22px",width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{display:"flex",gap:18,fontSize:12,color:"rgba(255,255,255,.4)"}}>
+          <span>📦 Fri frakt &gt;2 000 kr</span><span>⚡ Lev. 2–5 dagar</span>
+        </div>
+        <span style={{color:"rgba(255,255,255,.4)",fontSize:12,cursor:"pointer"}} onClick={()=>{setCu(null);setCart({});}}>Logga ut</span>
+      </div>
+    </div>
+    {/* HEADER */}
+    <div style={{background:"#fff",borderBottom:`1px solid ${LN}`,position:"sticky",top:0,zIndex:200,boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+      <div style={{maxWidth:1400,margin:"0 auto",padding:"0 22px",height:64,display:"flex",alignItems:"center",gap:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:11,cursor:"pointer",flexShrink:0}} onClick={()=>setSec("shop")}>
+          <div style={{width:40,height:40,background:`linear-gradient(135deg,${N},${N2})`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:18,color:"#c8922a"}}>P</div>
+          <div><div style={{fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:16,color:INK}}>PBA Solution</div><div style={{fontSize:10,color:MU,letterSpacing:.5,textTransform:"uppercase"}}>B2B Webshop</div></div>
+        </div>
+        <div style={{flex:1,maxWidth:460,position:"relative"}}>
+          <span style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",color:GH}}>🔍</span>
+          <input value={sq} onChange={e=>setSq(e.target.value)} placeholder="Sök artikelnr, namn…" style={{...inp(),paddingLeft:34,height:40}}/>
+        </div>
+        <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center"}}>
+          <button onClick={()=>setCartOpen(true)} style={{position:"relative",...b("#fff",INK),border:`1.5px solid ${LN}`,width:42,padding:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>
+            🛒
+            {cTot()>0&&<span style={{position:"absolute",top:-5,right:-5,background:RD,color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid #fff"}}>{cTot()}</span>}
+          </button>
+          <button onClick={openQuote} style={{...b(BL),boxShadow:"0 2px 8px rgba(37,99,235,.28)"}}>📧 Offert</button>
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 12px 4px 4px",border:`1.5px solid ${LN}`,borderRadius:8,background:"#fff"}}>
+            <div style={{width:30,height:30,borderRadius:"50%",background:`linear-gradient(135deg,${cu.role==="admin"?N:BL},${cu.role==="admin"?N2:"#1d4ed8"})`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:12}}>{cu.firstName[0]}{cu.lastName[0]}</div>
+            <div><div style={{fontSize:13,fontWeight:600}}>{cu.firstName}</div><div style={{fontSize:10,color:MU,textTransform:"uppercase"}}>{cu.role==="admin"?"Admin":"Kund"}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {/* NAV */}
+    <div style={{background:"#fff",borderBottom:`1px solid ${LN}`}}>
+      <div style={{maxWidth:1400,margin:"0 auto",padding:"0 22px",display:"flex",height:42,alignItems:"center",gap:2}}>
+        {[["shop","🏪 Butik"],["orders","📋 Ordrar"],...(cu.role==="admin"?[["admin","⚙️ Admin"]]:[])]
+          .map(([s,l])=><div key={s} onClick={()=>setSec(s)} style={{height:42,display:"flex",alignItems:"center",gap:5,padding:"0 13px",fontSize:13,fontWeight:sec===s?700:500,color:sec===s?N:MU,borderBottom:sec===s?`2px solid ${N}`:"2px solid transparent",cursor:"pointer",userSelect:"none"}}>
+            {l}
+            {s==="admin"&&(pend()+newI())>0&&<span style={{background:AM,color:"#fff",borderRadius:10,fontSize:9.5,padding:"1px 5px"}}>{pend()+newI()}</span>}
+          </div>)}
+      </div>
+    </div>
 
-```
-{sec==="shop"&&<Shop db={db} prods={prods} cart={cart} aCat={aCat} setACat={setACat} aSub={aSub} setASub={setASub} sort={sort} setSort={setSort} view={view} setView={setView} fIn={fIn} setFIn={setFIn} fLo={fLo} setFLo={setFLo} fZe={fZe} setFZe={setFZe} pMin={pMin} setPMin={setPMin} pMax={pMax} setPMax={setPMax} addCart={addCart} openProd={p=>{setProdM(p);setPdQty(1);}} catBy={catBy}/>}
-{sec==="orders"&&<Orders db={db} cu={cu} setInqM={setInqM}/>}
-{sec==="admin"&&cu.role==="admin"&&<Admin db={db} upd={upd} aSec={aSec} setASec={setASec} openEdit={p=>setEditP(p)||setEditOpen(true)} setInqM={setInqM} setCatM={setCatM} setSubM={setSubM} toast2={toast2} catBy={catBy}/>}
+    {sec==="shop"&&<Shop db={db} prods={prods} cart={cart} aCat={aCat} setACat={setACat} aSub={aSub} setASub={setASub} sort={sort} setSort={setSort} view={view} setView={setView} fIn={fIn} setFIn={setFIn} fLo={fLo} setFLo={setFLo} fZe={fZe} setFZe={setFZe} pMin={pMin} setPMin={setPMin} pMax={pMax} setPMax={setPMax} addCart={addCart} openProd={p=>{setProdM(p);setPdQty(1);}} catBy={catBy}/>}
+    {sec==="orders"&&<Orders db={db} cu={cu} setInqM={setInqM}/>}
+    {sec==="admin"&&cu.role==="admin"&&<Admin db={db} upd={upd} aSec={aSec} setASec={setASec} openEdit={p=>setEditP(p)||setEditOpen(true)} setInqM={setInqM} setCatM={setCatM} setSubM={setSubM} toast2={toast2} catBy={catBy}/>}
 
-{cartOpen&&<CartPanel cart={cart} db={db} cartNote={cartNote} setCartNote={setCartNote} chQ={chQ} rmC={rmC} onClose={()=>setCartOpen(false)} onQuote={openQuote} onClear={()=>{if(confirm("Töm?"))setCart({});}} catBy={catBy}/>}
-{prodM&&<Overlay onClose={()=>setProdM(null)} w={820}><ProdDetail p={prodM} qty={pdQty} setQty={setPdQty} addCart={(an,q)=>{addCart(an,q);setProdM(null);}} catBy={catBy} subBy={subBy} onClose={()=>setProdM(null)}/></Overlay>}
-{quoteOpen&&<Overlay onClose={()=>setQuoteOpen(false)} w={600}><QuoteModal cart={cart} db={db} selPay={selPay} setSelPay={setSelPay} qN={qN} setQN={setQN} qC={qC} setQC={setQC} qE={qE} setQE={setQE} qPh={qPh} setQPh={setQPh} qO={qO} setQO={setQO} qD={qD} setQD={setQD} qA={qA} setQA={setQA} qM={qM} setQM={setQM} cVal={cVal} onSend={sendQuote} onClose={()=>setQuoteOpen(false)}/></Overlay>}
-{editOpen&&<EditProd p={editP} db={db} onSave={saveP} onDel={delP} onClose={()=>setEditOpen(false)}/>}
-{inqM&&<Overlay onClose={()=>setInqM(null)} w={600}><InqModal order={inqM} db={db} cu={cu} upd={upd} onClose={()=>setInqM(null)} toast2={toast2}/></Overlay>}
-{catM!==null&&<Overlay onClose={()=>setCatM(null)} w={440}><CatModal cat={catM} upd={upd} onClose={()=>setCatM(null)} toast2={toast2}/></Overlay>}
-{subM!==null&&<Overlay onClose={()=>setSubM(null)} w={440}><SubModal sub={subM} db={db} upd={upd} onClose={()=>setSubM(null)} toast2={toast2}/></Overlay>}
-{succOpen&&<div style={{position:"fixed",inset:0,zIndex:700,background:"rgba(10,15,30,.55)",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{background:"#fff",borderRadius:20,padding:"48px 52px",textAlign:"center",maxWidth:400,boxShadow:"0 24px 80px rgba(0,0,0,.14)"}}><div style={{fontSize:56,marginBottom:14}}>✅</div><div style={{fontFamily:"Syne,sans-serif",fontSize:22,fontWeight:800,marginBottom:8}}>Offert skickad!</div><p style={{fontSize:14,color:MU,lineHeight:1.65,marginBottom:24}}>Din offertförfrågan öppnades i e-postklienten. Vi återkommer med offert.</p><button onClick={()=>setSuccOpen(false)} style={{...b(N),height:44,padding:"0 32px"}}>Fortsätt handla</button></div></div>}
-{toast&&<div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:toast.type==="ok"?GR:toast.type==="err"?RD:N,color:"#fff",padding:"11px 20px",borderRadius:12,fontSize:14,fontWeight:500,zIndex:9999,boxShadow:"0 8px 24px rgba(0,0,0,.12)",whiteSpace:"nowrap"}}>{toast.msg}</div>}
-```
-
+    {cartOpen&&<CartPanel cart={cart} db={db} cartNote={cartNote} setCartNote={setCartNote} chQ={chQ} rmC={rmC} onClose={()=>setCartOpen(false)} onQuote={openQuote} onClear={()=>{if(confirm("Töm?"))setCart({});}} catBy={catBy}/>}
+    {prodM&&<Overlay onClose={()=>setProdM(null)} w={820}><ProdDetail p={prodM} qty={pdQty} setQty={setPdQty} addCart={(an,q)=>{addCart(an,q);setProdM(null);}} catBy={catBy} subBy={subBy} onClose={()=>setProdM(null)}/></Overlay>}
+    {quoteOpen&&<Overlay onClose={()=>setQuoteOpen(false)} w={600}><QuoteModal cart={cart} db={db} selPay={selPay} setSelPay={setSelPay} qN={qN} setQN={setQN} qC={qC} setQC={setQC} qE={qE} setQE={setQE} qPh={qPh} setQPh={setQPh} qO={qO} setQO={setQO} qD={qD} setQD={setQD} qA={qA} setQA={setQA} qM={qM} setQM={setQM} cVal={cVal} onSend={sendQuote} onClose={()=>setQuoteOpen(false)}/></Overlay>}
+    {editOpen&&<EditProd p={editP} db={db} onSave={saveP} onDel={delP} onClose={()=>setEditOpen(false)}/>}
+    {inqM&&<Overlay onClose={()=>setInqM(null)} w={600}><InqModal order={inqM} db={db} cu={cu} upd={upd} onClose={()=>setInqM(null)} toast2={toast2}/></Overlay>}
+    {catM!==null&&<Overlay onClose={()=>setCatM(null)} w={440}><CatModal cat={catM} upd={upd} onClose={()=>setCatM(null)} toast2={toast2}/></Overlay>}
+    {subM!==null&&<Overlay onClose={()=>setSubM(null)} w={440}><SubModal sub={subM} db={db} upd={upd} onClose={()=>setSubM(null)} toast2={toast2}/></Overlay>}
+    {succOpen&&<div style={{position:"fixed",inset:0,zIndex:700,background:"rgba(10,15,30,.55)",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{background:"#fff",borderRadius:20,padding:"48px 52px",textAlign:"center",maxWidth:400,boxShadow:"0 24px 80px rgba(0,0,0,.14)"}}><div style={{fontSize:56,marginBottom:14}}>✅</div><div style={{fontFamily:"Syne,sans-serif",fontSize:22,fontWeight:800,marginBottom:8}}>Offert skickad!</div><p style={{fontSize:14,color:MU,lineHeight:1.65,marginBottom:24}}>Din offertförfrågan öppnades i e-postklienten. Vi återkommer med offert.</p><button onClick={()=>setSuccOpen(false)} style={{...b(N),height:44,padding:"0 32px"}}>Fortsätt handla</button></div></div>}
+    {toast&&<div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:toast.type==="ok"?GR:toast.type==="err"?RD:N,color:"#fff",padding:"11px 20px",borderRadius:12,fontSize:14,fontWeight:500,zIndex:9999,boxShadow:"0 8px 24px rgba(0,0,0,.12)",whiteSpace:"nowrap"}}>{toast.msg}</div>}
   </div>;
 }
 
 /* ── AUTH ── */
 function Auth({aTab,setATab,lEmail,setLEmail,lPass,setLPass,lErr,doLogin,rF,setRF,rL,setRL,rC,setRC,rE,setRE,rPh,setRPh,rO,setRO,rPs,setRPs,rErr,rOk,doReg}){
-return <div style={{minHeight:“100vh”,display:“flex”,fontFamily:“Inter,sans-serif”}}>
-<div style={{flex:1,background:“linear-gradient(145deg,#0f172a 0%,#1a2744 55%,#0c1a38 100%)”,padding:“52px 56px”,display:“flex”,flexDirection:“column”,justifyContent:“space-between”,position:“relative”,overflow:“hidden”}}>
-<div style={{position:“absolute”,inset:0,backgroundImage:“linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px)”,backgroundSize:“44px 44px”}}/>
-<div style={{position:“relative”,zIndex:1}}>
-<div style={{display:“flex”,alignItems:“center”,gap:13,marginBottom:56}}><div style={{width:46,height:46,background:“linear-gradient(135deg,#c8922a,#e8b84b)”,borderRadius:12,display:“flex”,alignItems:“center”,justifyContent:“center”,fontWeight:800,fontSize:21,color:N}}>P</div><div style={{color:”#fff”,fontFamily:“Syne,sans-serif”,fontWeight:700,fontSize:18}}>PBA Solution AB<span style={{display:“block”,fontSize:10.5,fontWeight:400,color:“rgba(255,255,255,.35)”,letterSpacing:.8,textTransform:“uppercase”,marginTop:2}}>Professional Tools</span></div></div>
-<div style={{fontFamily:“Syne,sans-serif”,fontSize:“clamp(28px,4vw,48px)”,fontWeight:800,color:”#fff”,lineHeight:1.1,marginBottom:16}}>Precision.<br/><em style={{color:”#c8922a”,fontStyle:“normal”}}>Prestanda.</em></div>
-<p style={{color:“rgba(255,255,255,.42)”,fontSize:14.5,lineHeight:1.7,maxWidth:400,marginBottom:40}}>Komplett sortiment av industriella skärverktyg, borrar, gängtappar och fräsar.</p>
-{[[“📦”,“200+ artiklar i lager”],[“🏭”,“Sandvik, Preciturn, Fengy”],[“📧”,“Offert via faktura”],[“⚡”,“Lev. 2–5 arbetsdagar”]].map(([ic,t])=><div key={t} style={{display:“flex”,alignItems:“center”,gap:11,color:“rgba(255,255,255,.55)”,fontSize:13.5,marginBottom:11}}><div style={{width:30,height:30,borderRadius:8,background:“rgba(255,255,255,.06)”,border:“1px solid rgba(255,255,255,.09)”,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:14}}>{ic}</div>{t}</div>)}
-</div>
-<div style={{position:“relative”,zIndex:1,color:“rgba(255,255,255,.2)”,fontSize:12}}>© 2025 PBA Solution AB</div>
-</div>
-<div style={{width:490,flexShrink:0,background:”#fff”,padding:“52px 48px”,display:“flex”,flexDirection:“column”,justifyContent:“center”,overflowY:“auto”}}>
-<div style={{display:“flex”,background:BG,borderRadius:12,padding:4,marginBottom:30,gap:3}}>
-{[[“login”,“Logga in”],[“reg”,“Registrera”]].map(([t,l])=><button key={t} onClick={()=>setATab(t)} style={{flex:1,height:36,border:“none”,background:aTab===t?”#fff”:“none”,color:aTab===t?INK:MU,borderRadius:9,fontWeight:600,fontSize:13,cursor:“pointer”}}>{l}</button>)}
-</div>
-{aTab===“login”?<>
-<div style={{fontFamily:“Syne,sans-serif”,fontSize:24,fontWeight:800,marginBottom:4}}>Välkommen tillbaka</div>
-<div style={{fontSize:13.5,color:MU,marginBottom:22}}>Logga in på ditt PBA Solution-konto.</div>
-<div style={{display:“flex”,flexDirection:“column”,gap:11}}>
-<FI label="E-postadress"><input value={lEmail} onChange={e=>setLEmail(e.target.value)} onKeyDown={e=>e.key===“Enter”&&doLogin()} style={inp()} placeholder=“din@email.se” type=“email”/></FI>
-<FI label="Lösenord"><input value={lPass} onChange={e=>setLPass(e.target.value)} onKeyDown={e=>e.key===“Enter”&&doLogin()} style={inp()} placeholder=”••••••••” type=“password”/></FI>
-</div>
-<button onClick={doLogin} style={{…b(N),width:“100%”,height:46,marginTop:14,fontFamily:“Syne,sans-serif”,fontSize:15}}>Logga in →</button>
-{lErr&&<div style={{marginTop:10,background:RDL,border:`1px solid ${RDM}`,borderRadius:8,padding:“10px 13px”,fontSize:13,color:RD}}>{lErr}</div>}
-<div style={{fontSize:11.5,color:GH,textAlign:“center”,marginTop:18}}>Admin: admin@pbasolution.se / Admin2024!</div>
-</>:<>
-<div style={{fontFamily:“Syne,sans-serif”,fontSize:24,fontWeight:800,marginBottom:4}}>Skapa konto</div>
-<div style={{fontSize:13.5,color:MU,marginBottom:20}}>Registrera dig för B2B-butiken.</div>
-<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:10}}>
-<FI label="Förnamn *"><input value={rF} onChange={e=>setRF(e.target.value)} style={inp()} placeholder=“Förnamn”/></FI>
-<FI label="Efternamn *"><input value={rL} onChange={e=>setRL(e.target.value)} style={inp()} placeholder=“Efternamn”/></FI>
-<FI label="Företag *" full><input value={rC} onChange={e=>setRC(e.target.value)} style={inp()} placeholder=“Företagsnamn AB”/></FI>
-<FI label="E-post *" full><input value={rE} onChange={e=>setRE(e.target.value)} style={inp()} placeholder=“din@foretag.se” type=“email”/></FI>
-<FI label="Telefon"><input value={rPh} onChange={e=>setRPh(e.target.value)} style={inp()} placeholder=”+46…”/></FI>
-<FI label="Org.nr"><input value={rO} onChange={e=>setRO(e.target.value)} style={inp()} placeholder=“556XXX-XXXX”/></FI>
-<FI label="Lösenord *" full><input value={rPs} onChange={e=>setRPs(e.target.value)} style={inp()} placeholder=”••••••••” type=“password”/></FI>
-</div>
-<button onClick={doReg} style={{…b(N),width:“100%”,height:46,marginTop:13,fontFamily:“Syne,sans-serif”,fontSize:15}}>Skicka registrering →</button>
-{rErr&&<div style={{marginTop:10,background:RDL,border:`1px solid ${RDM}`,borderRadius:8,padding:“10px 13px”,fontSize:13,color:RD}}>{rErr}</div>}
-{rOk&&<div style={{marginTop:10,background:AML,border:`1px solid ${AMM}`,borderRadius:8,padding:13,fontSize:13,color:AM}}>✅ Registrering skickad. Aktiveras när PBA Solution godkänt ditt konto.</div>}
-</>}
-</div>
-
+  return <div style={{minHeight:"100vh",display:"flex",fontFamily:"Inter,sans-serif"}}>
+    <div style={{flex:1,background:"linear-gradient(145deg,#0f172a 0%,#1a2744 55%,#0c1a38 100%)",padding:"52px 56px",display:"flex",flexDirection:"column",justifyContent:"space-between",position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px)",backgroundSize:"44px 44px"}}/>
+      <div style={{position:"relative",zIndex:1}}>
+        <div style={{display:"flex",alignItems:"center",gap:13,marginBottom:56}}><div style={{width:46,height:46,background:"linear-gradient(135deg,#c8922a,#e8b84b)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:21,color:N}}>P</div><div style={{color:"#fff",fontFamily:"Syne,sans-serif",fontWeight:700,fontSize:18}}>PBA Solution AB<span style={{display:"block",fontSize:10.5,fontWeight:400,color:"rgba(255,255,255,.35)",letterSpacing:.8,textTransform:"uppercase",marginTop:2}}>Professional Tools</span></div></div>
+        <div style={{fontFamily:"Syne,sans-serif",fontSize:"clamp(28px,4vw,48px)",fontWeight:800,color:"#fff",lineHeight:1.1,marginBottom:16}}>Precision.<br/><em style={{color:"#c8922a",fontStyle:"normal"}}>Prestanda.</em></div>
+        <p style={{color:"rgba(255,255,255,.42)",fontSize:14.5,lineHeight:1.7,maxWidth:400,marginBottom:40}}>Komplett sortiment av industriella skärverktyg, borrar, gängtappar och fräsar.</p>
+        {[["📦","200+ artiklar i lager"],["🏭","Sandvik, Preciturn, Fengy"],["📧","Offert via faktura"],["⚡","Lev. 2–5 arbetsdagar"]].map(([ic,t])=><div key={t} style={{display:"flex",alignItems:"center",gap:11,color:"rgba(255,255,255,.55)",fontSize:13.5,marginBottom:11}}><div style={{width:30,height:30,borderRadius:8,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.09)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>{ic}</div>{t}</div>)}
+      </div>
+      <div style={{position:"relative",zIndex:1,color:"rgba(255,255,255,.2)",fontSize:12}}>© 2025 PBA Solution AB</div>
+    </div>
+    <div style={{width:490,flexShrink:0,background:"#fff",padding:"52px 48px",display:"flex",flexDirection:"column",justifyContent:"center",overflowY:"auto"}}>
+      <div style={{display:"flex",background:BG,borderRadius:12,padding:4,marginBottom:30,gap:3}}>
+        {[["login","Logga in"],["reg","Registrera"]].map(([t,l])=><button key={t} onClick={()=>setATab(t)} style={{flex:1,height:36,border:"none",background:aTab===t?"#fff":"none",color:aTab===t?INK:MU,borderRadius:9,fontWeight:600,fontSize:13,cursor:"pointer"}}>{l}</button>)}
+      </div>
+      {aTab==="login"?<>
+        <div style={{fontFamily:"Syne,sans-serif",fontSize:24,fontWeight:800,marginBottom:4}}>Välkommen tillbaka</div>
+        <div style={{fontSize:13.5,color:MU,marginBottom:22}}>Logga in på ditt PBA Solution-konto.</div>
+        <div style={{display:"flex",flexDirection:"column",gap:11}}>
+          <FI label="E-postadress"><input value={lEmail} onChange={e=>setLEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doLogin()} style={inp()} placeholder="din@email.se" type="email"/></FI>
+          <FI label="Lösenord"><input value={lPass} onChange={e=>setLPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doLogin()} style={inp()} placeholder="••••••••" type="password"/></FI>
+        </div>
+        <button onClick={doLogin} style={{...b(N),width:"100%",height:46,marginTop:14,fontFamily:"Syne,sans-serif",fontSize:15}}>Logga in →</button>
+        {lErr&&<div style={{marginTop:10,background:RDL,border:`1px solid ${RDM}`,borderRadius:8,padding:"10px 13px",fontSize:13,color:RD}}>{lErr}</div>}
+        <div style={{fontSize:11.5,color:GH,textAlign:"center",marginTop:18}}>Admin: admin@pbasolution.se / Admin2024!</div>
+      </>:<>
+        <div style={{fontFamily:"Syne,sans-serif",fontSize:24,fontWeight:800,marginBottom:4}}>Skapa konto</div>
+        <div style={{fontSize:13.5,color:MU,marginBottom:20}}>Registrera dig för B2B-butiken.</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          <FI label="Förnamn *"><input value={rF} onChange={e=>setRF(e.target.value)} style={inp()} placeholder="Förnamn"/></FI>
+          <FI label="Efternamn *"><input value={rL} onChange={e=>setRL(e.target.value)} style={inp()} placeholder="Efternamn"/></FI>
+          <FI label="Företag *" full><input value={rC} onChange={e=>setRC(e.target.value)} style={inp()} placeholder="Företagsnamn AB"/></FI>
+          <FI label="E-post *" full><input value={rE} onChange={e=>setRE(e.target.value)} style={inp()} placeholder="din@foretag.se" type="email"/></FI>
+          <FI label="Telefon"><input value={rPh} onChange={e=>setRPh(e.target.value)} style={inp()} placeholder="+46..."/></FI>
+          <FI label="Org.nr"><input value={rO} onChange={e=>setRO(e.target.value)} style={inp()} placeholder="556XXX-XXXX"/></FI>
+          <FI label="Lösenord *" full><input value={rPs} onChange={e=>setRPs(e.target.value)} style={inp()} placeholder="••••••••" type="password"/></FI>
+        </div>
+        <button onClick={doReg} style={{...b(N),width:"100%",height:46,marginTop:13,fontFamily:"Syne,sans-serif",fontSize:15}}>Skicka registrering →</button>
+        {rErr&&<div style={{marginTop:10,background:RDL,border:`1px solid ${RDM}`,borderRadius:8,padding:"10px 13px",fontSize:13,color:RD}}>{rErr}</div>}
+        {rOk&&<div style={{marginTop:10,background:AML,border:`1px solid ${AMM}`,borderRadius:8,padding:13,fontSize:13,color:AM}}>✅ Registrering skickad. Aktiveras när PBA Solution godkänt ditt konto.</div>}
+      </>}
+    </div>
   </div>;
 }
 
 /* ── SHOP ── */
 function Shop({db,prods,cart,aCat,setACat,aSub,setASub,sort,setSort,view,setView,fIn,setFIn,fLo,setFLo,fZe,setFZe,pMin,setPMin,pMax,setPMax,addCart,openProd,catBy}){
-const [openC,setOpenC]=useState({});
-return <div>
-<div style={{background:N,padding:“36px 22px”}}>
-<div style={{maxWidth:1400,margin:“0 auto”,display:“flex”,alignItems:“flex-end”,justifyContent:“space-between”,gap:20,flexWrap:“wrap”}}>
-<div>
-<div style={{display:“inline-flex”,alignItems:“center”,gap:6,background:“rgba(200,146,42,.15)”,border:“1px solid rgba(200,146,42,.28)”,borderRadius:20,padding:“3px 12px”,fontSize:11,fontWeight:600,color:”#c8922a”,letterSpacing:.7,textTransform:“uppercase”,marginBottom:10}}>✦ Industriella skärverktyg</div>
-<div style={{fontFamily:“Syne,sans-serif”,fontSize:“clamp(20px,3vw,36px)”,fontWeight:800,color:”#fff”,lineHeight:1.12,marginBottom:8}}>Precision. Prestanda.<br/><em style={{color:”#c8922a”,fontStyle:“normal”}}>Pålitlighet.</em></div>
-</div>
-<div style={{display:“flex”,border:“1px solid rgba(255,255,255,.1)”,borderRadius:12,overflow:“hidden”}}>
-{[[db.products.length,“Artiklar”],[db.products.filter(p=>st(p)!==“ze”).length,“I lager”],[new Set(db.products.map(p=>p.catId)).size,“Kategorier”]].map(([v,l])=><div key={l} style={{padding:“11px 18px”,borderRight:“1px solid rgba(255,255,255,.1)”}}><div style={{fontFamily:“Syne,sans-serif”,fontSize:20,fontWeight:800,color:”#fff”}}>{v}</div><div style={{fontSize:10,color:“rgba(255,255,255,.38)”,textTransform:“uppercase”,letterSpacing:.8,marginTop:2,fontWeight:600}}>{l}</div></div>)}
-</div>
-</div>
-</div>
-<div style={{maxWidth:1400,margin:“0 auto”,padding:“22px 22px 80px”,display:“flex”,gap:20,alignItems:“flex-start”}}>
-<aside style={{width:226,flexShrink:0,position:“sticky”,top:114,display:“flex”,flexDirection:“column”,gap:11}}>
-<div style={{background:”#fff”,border:`1px solid ${LN}`,borderRadius:14,overflow:“hidden”}}>
-<div style={{padding:“11px 14px 9px”,borderBottom:`1px solid ${LN}`,fontSize:10.5,fontWeight:700,textTransform:“uppercase”,letterSpacing:1,color:MU}}>Kategorier</div>
-<div onClick={()=>{setACat(“all”);setASub(“all”);}} style={{display:“flex”,alignItems:“center”,justifyContent:“space-between”,padding:“8px 14px”,cursor:“pointer”,background:aCat===“all”?BLL:“transparent”,borderBottom:`1px solid ${LN}`}}>
-<span style={{fontSize:13.5,fontWeight:aCat===“all”?600:500,color:aCat===“all”?BL:INK}}>📋 Alla kategorier</span>
-<span style={{fontSize:10,fontFamily:“monospace”,color:aCat===“all”?BL:GH,background:aCat===“all”?BLM:BG,borderRadius:5,padding:“1px 5px”}}>{db.products.length}</span>
-</div>
-{db.cats.map(cat=>{
-const cp=db.products.filter(p=>p.catId===cat.id);if(!cp.length)return null;
-const cs=db.subs.filter(s=>s.pid===cat.id);
-const isA=aCat===cat.id;const isO=openC[cat.id]||isA;
-return <div key={cat.id}>
-<div onClick={()=>{setACat(cat.id);setASub(“all”);setOpenC(o=>({…o,[cat.id]:!o[cat.id]||!isA}));}} style={{display:“flex”,alignItems:“center”,justifyContent:“space-between”,padding:“8px 14px”,cursor:“pointer”,background:isA&&aSub===“all”?BLL:“transparent”}}>
-<span style={{display:“flex”,alignItems:“center”,gap:7,fontSize:13.5,fontWeight:isA?600:500,color:isA?BL:INK}}><span>{cat.icon}</span>{cat.name}</span>
-<div style={{display:“flex”,alignItems:“center”,gap:4}}><span style={{fontSize:10,fontFamily:“monospace”,color:isA?BL:GH,background:isA?BLM:BG,borderRadius:5,padding:“1px 5px”}}>{cp.length}</span>{cs.length>0&&<span style={{fontSize:11,color:GH,transform:isO?“rotate(90deg)”:“none”,display:“inline-block”,transition:“transform .2s”}}>›</span>}</div>
-</div>
-{isO&&cs.map(sc=>{const cnt=db.products.filter(p=>p.subId===sc.id).length;if(!cnt)return null;return <div key={sc.id} onClick={()=>{setACat(cat.id);setASub(sc.id);}} style={{display:“flex”,alignItems:“center”,justifyContent:“space-between”,padding:“6px 14px 6px 38px”,cursor:“pointer”,fontSize:13,color:aSub===sc.id?BL:SL,fontWeight:aSub===sc.id?600:400,background:aSub===sc.id?BLL:“transparent”}}>{sc.name}<span style={{fontSize:10,fontFamily:“monospace”,color:aSub===sc.id?BL:GH}}>{cnt}</span></div>;})}
-</div>;
-})}
-</div>
-<div style={{background:”#fff”,border:`1px solid ${LN}`,borderRadius:14,overflow:“hidden”}}>
-<div style={{padding:“10px 14px”}}>
-<div style={{fontSize:10.5,fontWeight:700,textTransform:“uppercase”,letterSpacing:1,color:MU,marginBottom:8}}>Lagerstatus</div>
-{[[fIn,setFIn,“I lager”],[fLo,setFLo,“Lågt saldo”],[fZe,setFZe,“Slut i lager”]].map(([v,s,l])=><label key={l} style={{display:“flex”,alignItems:“center”,gap:8,fontSize:13.5,color:SL,cursor:“pointer”,marginBottom:5}}><input type=“checkbox” checked={v} onChange={e=>s(e.target.checked)} style={{accentColor:BL}}/>{l}</label>)}
-<div style={{fontSize:10.5,fontWeight:700,textTransform:“uppercase”,letterSpacing:1,color:MU,margin:“10px 0 7px”}}>Pris (kr)</div>
-<div style={{display:“flex”,gap:6,alignItems:“center”}}>
-<input type=“number” value={pMin} onChange={e=>setPMin(e.target.value)} placeholder=“Min” style={{…inp(),height:34,fontSize:12,padding:“0 7px”}}/>
-<span style={{color:GH}}>–</span>
-<input type=“number” value={pMax} onChange={e=>setPMax(e.target.value)} placeholder=“Max” style={{…inp(),height:34,fontSize:12,padding:“0 7px”}}/>
-</div>
-<button onClick={()=>{setACat(“all”);setASub(“all”);setFIn(false);setFLo(false);setFZe(false);setPMin(””);setPMax(””);}} style={{width:“100%”,height:32,border:`1.5px solid ${LN}`,borderRadius:8,background:“none”,fontSize:12.5,color:SL,cursor:“pointer”,marginTop:8}}>✕ Rensa</button>
-</div>
-</div>
-</aside>
-<div style={{flex:1,minWidth:0}}>
-<div style={{display:“flex”,alignItems:“center”,gap:9,marginBottom:16,flexWrap:“wrap”}}>
-<div style={{flex:1,fontSize:13,color:MU}}><strong style={{color:INK}}>{prods.length}</strong> av {db.products.length} artiklar</div>
-<select value={sort} onChange={e=>setSort(e.target.value)} style={{height:36,border:`1.5px solid ${LN}`,borderRadius:8,padding:“0 10px”,fontSize:13,background:”#fff”,cursor:“pointer”}}>
-<option value="artNr">Art.nr</option><option value="name">Namn</option><option value="price-asc">Pris ↑</option><option value="price-desc">Pris ↓</option><option value="stock">Lager ↓</option>
-</select>
-<div style={{display:“flex”,background:BG,border:`1.5px solid ${LN}`,borderRadius:8,padding:3,gap:2}}>
-{[[“g”,“⊞”],[“l”,“☰”]].map(([v,ic])=><button key={v} onClick={()=>setView(v)} style={{width:28,height:26,border:“none”,background:view===v?”#fff”:“none”,color:view===v?INK:MU,borderRadius:6,cursor:“pointer”}}>{ic}</button>)}
-</div>
-</div>
-{!prods.length?<div style={{textAlign:“center”,padding:“60px”,color:GH}}><div style={{fontSize:44,opacity:.3,marginBottom:12}}>🔍</div><div style={{fontFamily:“Syne,sans-serif”,fontSize:17,fontWeight:700,color:MU,marginBottom:6}}>Inga artiklar</div></div>:
-<div style={{display:“grid”,gridTemplateColumns:view===“l”?“1fr”:“repeat(auto-fill,minmax(210px,1fr))”,gap:view===“l”?7:12}}>
-{prods.map(p=><PCard key={p.id} p={p} cart={cart} addCart={addCart} onClick={()=>openProd(p)} catBy={catBy} isList={view===“l”}/>)}
-</div>}
-</div>
-</div>
-
+  const [openC,setOpenC]=useState({});
+  return <div>
+    <div style={{background:N,padding:"36px 22px"}}>
+      <div style={{maxWidth:1400,margin:"0 auto",display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:20,flexWrap:"wrap"}}>
+        <div>
+          <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(200,146,42,.15)",border:"1px solid rgba(200,146,42,.28)",borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:600,color:"#c8922a",letterSpacing:.7,textTransform:"uppercase",marginBottom:10}}>✦ Industriella skärverktyg</div>
+          <div style={{fontFamily:"Syne,sans-serif",fontSize:"clamp(20px,3vw,36px)",fontWeight:800,color:"#fff",lineHeight:1.12,marginBottom:8}}>Precision. Prestanda.<br/><em style={{color:"#c8922a",fontStyle:"normal"}}>Pålitlighet.</em></div>
+        </div>
+        <div style={{display:"flex",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,overflow:"hidden"}}>
+          {[[db.products.length,"Artiklar"],[db.products.filter(p=>st(p)!=="ze").length,"I lager"],[new Set(db.products.map(p=>p.catId)).size,"Kategorier"]].map(([v,l])=><div key={l} style={{padding:"11px 18px",borderRight:"1px solid rgba(255,255,255,.1)"}}><div style={{fontFamily:"Syne,sans-serif",fontSize:20,fontWeight:800,color:"#fff"}}>{v}</div><div style={{fontSize:10,color:"rgba(255,255,255,.38)",textTransform:"uppercase",letterSpacing:.8,marginTop:2,fontWeight:600}}>{l}</div></div>)}
+        </div>
+      </div>
+    </div>
+    <div style={{maxWidth:1400,margin:"0 auto",padding:"22px 22px 80px",display:"flex",gap:20,alignItems:"flex-start"}}>
+      <aside style={{width:226,flexShrink:0,position:"sticky",top:114,display:"flex",flexDirection:"column",gap:11}}>
+        <div style={{background:"#fff",border:`1px solid ${LN}`,borderRadius:14,overflow:"hidden"}}>
+          <div style={{padding:"11px 14px 9px",borderBottom:`1px solid ${LN}`,fontSize:10.5,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:MU}}>Kategorier</div>
+          <div onClick={()=>{setACat("all");setASub("all");}} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 14px",cursor:"pointer",background:aCat==="all"?BLL:"transparent",borderBottom:`1px solid ${LN}`}}>
+            <span style={{fontSize:13.5,fontWeight:aCat==="all"?600:500,color:aCat==="all"?BL:INK}}>📋 Alla kategorier</span>
+            <span style={{fontSize:10,fontFamily:"monospace",color:aCat==="all"?BL:GH,background:aCat==="all"?BLM:BG,borderRadius:5,padding:"1px 5px"}}>{db.products.length}</span>
+          </div>
+          {db.cats.map(cat=>{
+            const cp=db.products.filter(p=>p.catId===cat.id);if(!cp.length)return null;
+            const cs=db.subs.filter(s=>s.pid===cat.id);
+            const isA=aCat===cat.id;const isO=openC[cat.id]||isA;
+            return <div key={cat.id}>
+              <div onClick={()=>{setACat(cat.id);setASub("all");setOpenC(o=>({...o,[cat.id]:!o[cat.id]||!isA}));}} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 14px",cursor:"pointer",background:isA&&aSub==="all"?BLL:"transparent"}}>
+                <span style={{display:"flex",alignItems:"center",gap:7,fontSize:13.5,fontWeight:isA?600:500,color:isA?BL:INK}}><span>{cat.icon}</span>{cat.name}</span>
+                <div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontSize:10,fontFamily:"monospace",color:isA?BL:GH,background:isA?BLM:BG,borderRadius:5,padding:"1px 5px"}}>{cp.length}</span>{cs.length>0&&<span style={{fontSize:11,color:GH,transform:isO?"rotate(90deg)":"none",display:"inline-block",transition:"transform .2s"}}>›</span>}</div>
+              </div>
+              {isO&&cs.map(sc=>{const cnt=db.products.filter(p=>p.subId===sc.id).length;if(!cnt)return null;return <div key={sc.id} onClick={()=>{setACat(cat.id);setASub(sc.id);}} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 14px 6px 38px",cursor:"pointer",fontSize:13,color:aSub===sc.id?BL:SL,fontWeight:aSub===sc.id?600:400,background:aSub===sc.id?BLL:"transparent"}}>{sc.name}<span style={{fontSize:10,fontFamily:"monospace",color:aSub===sc.id?BL:GH}}>{cnt}</span></div>;})}
+            </div>;
+          })}
+        </div>
+        <div style={{background:"#fff",border:`1px solid ${LN}`,borderRadius:14,overflow:"hidden"}}>
+          <div style={{padding:"10px 14px"}}>
+            <div style={{fontSize:10.5,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:MU,marginBottom:8}}>Lagerstatus</div>
+            {[[fIn,setFIn,"I lager"],[fLo,setFLo,"Lågt saldo"],[fZe,setFZe,"Slut i lager"]].map(([v,s,l])=><label key={l} style={{display:"flex",alignItems:"center",gap:8,fontSize:13.5,color:SL,cursor:"pointer",marginBottom:5}}><input type="checkbox" checked={v} onChange={e=>s(e.target.checked)} style={{accentColor:BL}}/>{l}</label>)}
+            <div style={{fontSize:10.5,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:MU,margin:"10px 0 7px"}}>Pris (kr)</div>
+            <div style={{display:"flex",gap:6,alignItems:"center"}}>
+              <input type="number" value={pMin} onChange={e=>setPMin(e.target.value)} placeholder="Min" style={{...inp(),height:34,fontSize:12,padding:"0 7px"}}/>
+              <span style={{color:GH}}>–</span>
+              <input type="number" value={pMax} onChange={e=>setPMax(e.target.value)} placeholder="Max" style={{...inp(),height:34,fontSize:12,padding:"0 7px"}}/>
+            </div>
+            <button onClick={()=>{setACat("all");setASub("all");setFIn(false);setFLo(false);setFZe(false);setPMin("");setPMax("");}} style={{width:"100%",height:32,border:`1.5px solid ${LN}`,borderRadius:8,background:"none",fontSize:12.5,color:SL,cursor:"pointer",marginTop:8}}>✕ Rensa</button>
+          </div>
+        </div>
+      </aside>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:16,flexWrap:"wrap"}}>
+          <div style={{flex:1,fontSize:13,color:MU}}><strong style={{color:INK}}>{prods.length}</strong> av {db.products.length} artiklar</div>
+          <select value={sort} onChange={e=>setSort(e.target.value)} style={{height:36,border:`1.5px solid ${LN}`,borderRadius:8,padding:"0 10px",fontSize:13,background:"#fff",cursor:"pointer"}}>
+            <option value="artNr">Art.nr</option><option value="name">Namn</option><option value="price-asc">Pris ↑</option><option value="price-desc">Pris ↓</option><option value="stock">Lager ↓</option>
+          </select>
+          <div style={{display:"flex",background:BG,border:`1.5px solid ${LN}`,borderRadius:8,padding:3,gap:2}}>
+            {[["g","⊞"],["l","☰"]].map(([v,ic])=><button key={v} onClick={()=>setView(v)} style={{width:28,height:26,border:"none",background:view===v?"#fff":"none",color:view===v?INK:MU,borderRadius:6,cursor:"pointer"}}>{ic}</button>)}
+          </div>
+        </div>
+        {!prods.length?<div style={{textAlign:"center",padding:"60px",color:GH}}><div style={{fontSize:44,opacity:.3,marginBottom:12}}>🔍</div><div style={{fontFamily:"Syne,sans-serif",fontSize:17,fontWeight:700,color:MU,marginBottom:6}}>Inga artiklar</div></div>:
+        <div style={{display:"grid",gridTemplateColumns:view==="l"?"1fr":"repeat(auto-fill,minmax(210px,1fr))",gap:view==="l"?7:12}}>
+          {prods.map(p=><PCard key={p.id} p={p} cart={cart} addCart={addCart} onClick={()=>openProd(p)} catBy={catBy} isList={view==="l"}/>)}
+        </div>}
+      </div>
+    </div>
   </div>;
 }
 
 function PCard({p,cart,addCart,onClick,catBy,isList}){
-const cat=catBy(p.catId);const s=st(p);const inC=cart[p.artNr]||0;
-return <div style={{display:“flex”,flexDirection:isList?“row”:“column”,background:”#fff”,border:`1px solid ${LN}`,borderRadius:isList?12:15,overflow:“hidden”,cursor:“pointer”,transition:“all .2s”}} onClick={onClick}
-onMouseEnter={e=>{e.currentTarget.style.transform=“translateY(-3px)”;e.currentTarget.style.boxShadow=“0 12px 36px rgba(0,0,0,.09)”;}}
-onMouseLeave={e=>{e.currentTarget.style.transform=“none”;e.currentTarget.style.boxShadow=“none”;}}>
-<div style={{position:“relative”,…(isList?{width:88,height:88,flexShrink:0}:{aspectRatio:“1”}),background:`linear-gradient(135deg,${BG},${S2})`,display:“flex”,alignItems:“center”,justifyContent:“center”,borderBottom:isList?“none”:`1px solid ${LN}`,borderRight:isList?`1px solid ${LN}`:“none”,overflow:“hidden”}}>
-{p.img?<img src={p.img} alt={p.name} style={{width:“100%”,height:“100%”,objectFit:“cover”}}/>:<span style={{fontSize:isList?24:40,opacity:.22}}>{cat.icon}</span>}
-{s!==“ok”&&<span style={{position:“absolute”,top:7,left:7,background:s===“ze”?RD:AM,color:”#fff”,fontSize:10,fontWeight:700,padding:“2px 6px”,borderRadius:6}}>{s===“ze”?“Slut”:“Lågt”}</span>}
-{inC>0&&<span style={{position:“absolute”,top:7,right:7,background:BL,color:”#fff”,width:20,height:20,borderRadius:“50%”,fontSize:9.5,fontWeight:700,display:“flex”,alignItems:“center”,justifyContent:“center”,border:“2px solid #fff”}}>{inC}</span>}
-</div>
-<div style={{padding:isList?“11px 15px”:“12px 13px 13px”,display:“flex”,flexDirection:isList?“row”:“column”,alignItems:isList?“center”:“stretch”,gap:isList?12:0,flex:1}}>
-<div style={{flex:1,minWidth:0}}>
-<div style={{fontSize:10.5,fontFamily:“monospace”,color:BL,marginBottom:2}}>{p.artNr}</div>
-<div style={{fontSize:13.5,fontWeight:600,color:INK,lineHeight:1.3,overflow:“hidden”,display:”-webkit-box”,WebkitLineClamp:isList?1:2,WebkitBoxOrient:“vertical”}}>{p.name}</div>
-{!isList&&p.supplier&&<div style={{fontSize:11,color:MU,marginTop:3}}>{p.supplier}</div>}
-</div>
-<div style={{display:“flex”,alignItems:“center”,gap:6,…(isList?{flexShrink:0}:{marginTop:“auto”,paddingTop:9,borderTop:`1px solid ${LN}`})}}>
-{p.price?<span style={{fontSize:16,fontWeight:700,fontFamily:“monospace”,color:INK}}>{p.price.toLocaleString(“sv-SE”,{minimumFractionDigits:2,maximumFractionDigits:2})} <sub style={{fontSize:10,fontWeight:400,color:MU}}>kr</sub></span>:<span style={{fontSize:12,color:MU}}>Pris på begäran</span>}
-<button onClick={e=>{e.stopPropagation();addCart(p.artNr,1);}} style={{…b(N),width:32,height:32,padding:0,fontSize:19,marginLeft:“auto”,flexShrink:0}}>+</button>
-</div>
-</div>
-
+  const cat=catBy(p.catId);const s=st(p);const inC=cart[p.artNr]||0;
+  return <div style={{display:"flex",flexDirection:isList?"row":"column",background:"#fff",border:`1px solid ${LN}`,borderRadius:isList?12:15,overflow:"hidden",cursor:"pointer",transition:"all .2s"}} onClick={onClick}
+    onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow="0 12px 36px rgba(0,0,0,.09)";}}
+    onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+    <div style={{position:"relative",...(isList?{width:88,height:88,flexShrink:0}:{aspectRatio:"1"}),background:`linear-gradient(135deg,${BG},${S2})`,display:"flex",alignItems:"center",justifyContent:"center",borderBottom:isList?"none":`1px solid ${LN}`,borderRight:isList?`1px solid ${LN}`:"none",overflow:"hidden"}}>
+      {p.img?<img src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:isList?24:40,opacity:.22}}>{cat.icon}</span>}
+      {s!=="ok"&&<span style={{position:"absolute",top:7,left:7,background:s==="ze"?RD:AM,color:"#fff",fontSize:10,fontWeight:700,padding:"2px 6px",borderRadius:6}}>{s==="ze"?"Slut":"Lågt"}</span>}
+      {inC>0&&<span style={{position:"absolute",top:7,right:7,background:BL,color:"#fff",width:20,height:20,borderRadius:"50%",fontSize:9.5,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid #fff"}}>{inC}</span>}
+    </div>
+    <div style={{padding:isList?"11px 15px":"12px 13px 13px",display:"flex",flexDirection:isList?"row":"column",alignItems:isList?"center":"stretch",gap:isList?12:0,flex:1}}>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:10.5,fontFamily:"monospace",color:BL,marginBottom:2}}>{p.artNr}</div>
+        <div style={{fontSize:13.5,fontWeight:600,color:INK,lineHeight:1.3,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:isList?1:2,WebkitBoxOrient:"vertical"}}>{p.name}</div>
+        {!isList&&p.supplier&&<div style={{fontSize:11,color:MU,marginTop:3}}>{p.supplier}</div>}
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:6,...(isList?{flexShrink:0}:{marginTop:"auto",paddingTop:9,borderTop:`1px solid ${LN}`})}}>
+        {p.price?<span style={{fontSize:16,fontWeight:700,fontFamily:"monospace",color:INK}}>{p.price.toLocaleString("sv-SE",{minimumFractionDigits:2,maximumFractionDigits:2})} <sub style={{fontSize:10,fontWeight:400,color:MU}}>kr</sub></span>:<span style={{fontSize:12,color:MU}}>Pris på begäran</span>}
+        <button onClick={e=>{e.stopPropagation();addCart(p.artNr,1);}} style={{...b(N),width:32,height:32,padding:0,fontSize:19,marginLeft:"auto",flexShrink:0}}>+</button>
+      </div>
+    </div>
   </div>;
 }
 
 /* ── PRODUCT DETAIL ── */
 function ProdDetail({p,qty,setQty,addCart,catBy,subBy,onClose}){
-const cat=catBy(p.catId);const sub=subBy(p.subId);const s=st(p);
-const stC=s===“ok”?GR:s===“lo”?AM:RD;
-const stT=s===“ok”?`I lager (${p.stock} st)`:s===“lo”?`Lågt saldo (${p.stock} st)`:“Slut i lager”;
-const imgs=(p.images&&p.images.length>0)?p.images:(p.img?[{id:“m”,src:p.img}]:[]);
-const [ai,setAi]=useState(0);
-const [tab,setTab]=useState(“desc”);
-const specs=p.specs||[];
-return <div>
-<div style={{display:“flex”,alignItems:“center”,justifyContent:“space-between”,padding:“18px 22px”,borderBottom:`1px solid ${LN}`,position:“sticky”,top:0,background:”#fff”,zIndex:1}}>
-<div style={{display:“flex”,alignItems:“center”,gap:10}}>
-<div style={{width:36,height:36,borderRadius:8,background:BLL,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:16}}>📦</div>
-<div><div style={{fontFamily:“Syne,sans-serif”,fontSize:15,fontWeight:700}}>{p.artNr}</div><div style={{fontSize:12,color:MU,marginTop:1}}>{cat.icon} {cat.name}{sub?” › “+sub.name:””}</div></div>
-</div>
-<button onClick={onClose} style={{width:30,height:30,background:BG,border:`1.5px solid ${LN}`,borderRadius:8,color:SL,fontSize:13,cursor:“pointer”}}>✕</button>
-</div>
-<div style={{display:“grid”,gridTemplateColumns:“280px 1fr”}}>
-<div style={{borderRight:`1px solid ${LN}`}}>
-<div style={{height:260,background:`linear-gradient(135deg,${BG},${S2})`,display:“flex”,alignItems:“center”,justifyContent:“center”,overflow:“hidden”,borderBottom:`1px solid ${LN}`}}>
-{imgs.length>0?<img src={imgs[ai]?.src||imgs[0].src} alt={p.name} style={{width:“100%”,height:“100%”,objectFit:“cover”}}/>:<span style={{fontSize:76,opacity:.18}}>{cat.icon}</span>}
-</div>
-{imgs.length>1&&<div style={{display:“flex”,gap:6,padding:“9px 11px”,overflowX:“auto”}}>
-{imgs.map((img,i)=><div key={img.id} onClick={()=>setAi(i)} style={{width:50,height:50,flexShrink:0,borderRadius:7,overflow:“hidden”,border:`2px solid ${ai===i?BL:LN}`,cursor:“pointer”,background:BG}}><img src={img.src} style={{width:“100%”,height:“100%”,objectFit:“cover”}}/></div>)}
-</div>}
-<div style={{padding:“12px 14px”}}>
-{[[p.supplier||“PBA Solution AB”,“Leverantör”],[p.artNr,“Art.nr”]].map(([v,l])=><div key={l} style={{display:“flex”,justifyContent:“space-between”,padding:“5px 0”,borderBottom:`1px solid ${LN}`,fontSize:12.5}}><span style={{color:MU}}>{l}</span><span style={{fontWeight:600,color:INK}}>{v}</span></div>)}
-</div>
-</div>
-<div style={{display:“flex”,flexDirection:“column”}}>
-<div style={{padding:“18px 20px 0”}}>
-<div style={{fontFamily:“Syne,sans-serif”,fontSize:19,fontWeight:800,color:INK,lineHeight:1.2,marginBottom:4}}>{p.name}</div>
-<div style={{fontSize:13,color:MU,marginBottom:13}}>{p.supplier||“PBA Solution AB”}</div>
-<div style={{background:S2,border:`1px solid ${LN}`,borderRadius:11,padding:“12px 15px”,marginBottom:13}}>
-{p.price?<><div style={{fontFamily:“monospace”,fontSize:24,fontWeight:700,color:INK}}>{kr2(p.price)}</div><div style={{fontSize:11.5,color:MU,marginTop:3}}>Exkl. moms · Faktura 30 dagar</div></>:<div style={{fontSize:14,color:MU}}>Pris på begäran</div>}
-</div>
-<div style={{fontSize:13,fontWeight:600,color:stC,marginBottom:13}}>{stT}</div>
-<div style={{display:“flex”,gap:9,alignItems:“center”,marginBottom:16}}>
-<div style={{display:“flex”,alignItems:“center”,border:`1.5px solid ${LN}`,borderRadius:8,overflow:“hidden”}}>
-<button onClick={()=>setQty(q=>Math.max(1,q-1))} style={{width:36,height:42,border:“none”,background:BG,fontSize:16,cursor:“pointer”,color:SL}}>−</button>
-<input type=“number” value={qty} onChange={e=>setQty(Math.max(1,parseInt(e.target.value)||1))} style={{width:48,height:42,border:“none”,borderLeft:`1.5px solid ${LN}`,borderRight:`1.5px solid ${LN}`,textAlign:“center”,fontFamily:“monospace”,fontSize:15,fontWeight:700,outline:“none”}}/>
-<button onClick={()=>setQty(q=>q+1)} style={{width:36,height:42,border:“none”,background:BG,fontSize:16,cursor:“pointer”,color:SL}}>+</button>
-</div>
-<button onClick={()=>addCart(p.artNr,qty)} style={{…b(N),flex:1,height:44,fontSize:14}}>+ Lägg i varukorg</button>
-</div>
-</div>
-<div style={{borderTop:`1px solid ${LN}`,display:“flex”}}>
-{[[“desc”,“Beskrivning”],[“specs”,`Spec.${specs.length>0?" ("+specs.length+")":""}`]].map(([id,l])=><button key={id} onClick={()=>setTab(id)} style={{flex:1,height:38,border:“none”,background:“none”,borderBottom:`2px solid ${tab===id?N:"transparent"}`,color:tab===id?N:MU,fontWeight:tab===id?700:500,fontSize:13,cursor:“pointer”}}>{l}</button>)}
-</div>
-<div style={{padding:“14px 20px”,flex:1,overflowY:“auto”,maxHeight:180}}>
-{tab===“desc”&&<p style={{fontSize:13.5,color:SL,lineHeight:1.7,margin:0}}>{p.desc||“Ingen beskrivning tillgänglig.”}</p>}
-{tab===“specs”&&(!specs.length?<div style={{fontSize:13,color:GH}}>Inga specifikationer registrerade.</div>:
-<table style={{width:“100%”,borderCollapse:“collapse”,fontSize:13}}>
-<thead><tr style={{background:BLL}}>{[“Parameter”,“Värde”,“Enhet”].map(h=><th key={h} style={{padding:“7px 11px”,textAlign:“left”,fontSize:10.5,fontWeight:700,textTransform:“uppercase”,color:BL,borderBottom:`1px solid ${BLM}`}}>{h}</th>)}</tr></thead>
-<tbody>{specs.filter(s=>s.param).map((s,i)=><tr key={s.id} style={{background:i%2===0?”#fff”:S2,borderBottom:`1px solid ${LN}`}}><td style={{padding:“7px 11px”,fontWeight:600,color:INK}}>{s.param}</td><td style={{padding:“7px 11px”,fontFamily:“monospace”,color:N,fontWeight:600}}>{s.value}</td><td style={{padding:“7px 11px”,color:MU,fontSize:12}}>{s.unit}</td></tr>)}</tbody>
-</table>)}
-</div>
-</div>
-</div>
-
+  const cat=catBy(p.catId);const sub=subBy(p.subId);const s=st(p);
+  const stC=s==="ok"?GR:s==="lo"?AM:RD;
+  const stT=s==="ok"?`I lager (${p.stock} st)`:s==="lo"?`Lågt saldo (${p.stock} st)`:"Slut i lager";
+  const imgs=(p.images&&p.images.length>0)?p.images:(p.img?[{id:"m",src:p.img}]:[]);
+  const [ai,setAi]=useState(0);
+  const [tab,setTab]=useState("desc");
+  const specs=p.specs||[];
+  return <div>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 22px",borderBottom:`1px solid ${LN}`,position:"sticky",top:0,background:"#fff",zIndex:1}}>
+      <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <div style={{width:36,height:36,borderRadius:8,background:BLL,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>📦</div>
+        <div><div style={{fontFamily:"Syne,sans-serif",fontSize:15,fontWeight:700}}>{p.artNr}</div><div style={{fontSize:12,color:MU,marginTop:1}}>{cat.icon} {cat.name}{sub?" › "+sub.name:""}</div></div>
+      </div>
+      <button onClick={onClose} style={{width:30,height:30,background:BG,border:`1.5px solid ${LN}`,borderRadius:8,color:SL,fontSize:13,cursor:"pointer"}}>✕</button>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"280px 1fr"}}>
+      <div style={{borderRight:`1px solid ${LN}`}}>
+        <div style={{height:260,background:`linear-gradient(135deg,${BG},${S2})`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",borderBottom:`1px solid ${LN}`}}>
+          {imgs.length>0?<img src={imgs[ai]?.src||imgs[0].src} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:76,opacity:.18}}>{cat.icon}</span>}
+        </div>
+        {imgs.length>1&&<div style={{display:"flex",gap:6,padding:"9px 11px",overflowX:"auto"}}>
+          {imgs.map((img,i)=><div key={img.id} onClick={()=>setAi(i)} style={{width:50,height:50,flexShrink:0,borderRadius:7,overflow:"hidden",border:`2px solid ${ai===i?BL:LN}`,cursor:"pointer",background:BG}}><img src={img.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>)}
+        </div>}
+        <div style={{padding:"12px 14px"}}>
+          {[[p.supplier||"PBA Solution AB","Leverantör"],[p.artNr,"Art.nr"]].map(([v,l])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${LN}`,fontSize:12.5}}><span style={{color:MU}}>{l}</span><span style={{fontWeight:600,color:INK}}>{v}</span></div>)}
+        </div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column"}}>
+        <div style={{padding:"18px 20px 0"}}>
+          <div style={{fontFamily:"Syne,sans-serif",fontSize:19,fontWeight:800,color:INK,lineHeight:1.2,marginBottom:4}}>{p.name}</div>
+          <div style={{fontSize:13,color:MU,marginBottom:13}}>{p.supplier||"PBA Solution AB"}</div>
+          <div style={{background:S2,border:`1px solid ${LN}`,borderRadius:11,padding:"12px 15px",marginBottom:13}}>
+            {p.price?<><div style={{fontFamily:"monospace",fontSize:24,fontWeight:700,color:INK}}>{kr2(p.price)}</div><div style={{fontSize:11.5,color:MU,marginTop:3}}>Exkl. moms · Faktura 30 dagar</div></>:<div style={{fontSize:14,color:MU}}>Pris på begäran</div>}
+          </div>
+          <div style={{fontSize:13,fontWeight:600,color:stC,marginBottom:13}}>{stT}</div>
+          <div style={{display:"flex",gap:9,alignItems:"center",marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"center",border:`1.5px solid ${LN}`,borderRadius:8,overflow:"hidden"}}>
+              <button onClick={()=>setQty(q=>Math.max(1,q-1))} style={{width:36,height:42,border:"none",background:BG,fontSize:16,cursor:"pointer",color:SL}}>−</button>
+              <input type="number" value={qty} onChange={e=>setQty(Math.max(1,parseInt(e.target.value)||1))} style={{width:48,height:42,border:"none",borderLeft:`1.5px solid ${LN}`,borderRight:`1.5px solid ${LN}`,textAlign:"center",fontFamily:"monospace",fontSize:15,fontWeight:700,outline:"none"}}/>
+              <button onClick={()=>setQty(q=>q+1)} style={{width:36,height:42,border:"none",background:BG,fontSize:16,cursor:"pointer",color:SL}}>+</button>
+            </div>
+            <button onClick={()=>addCart(p.artNr,qty)} style={{...b(N),flex:1,height:44,fontSize:14}}>+ Lägg i varukorg</button>
+          </div>
+        </div>
+        <div style={{borderTop:`1px solid ${LN}`,display:"flex"}}>
+          {[["desc","Beskrivning"],["specs",`Spec.${specs.length>0?" ("+specs.length+")":""}`]].map(([id,l])=><button key={id} onClick={()=>setTab(id)} style={{flex:1,height:38,border:"none",background:"none",borderBottom:`2px solid ${tab===id?N:"transparent"}`,color:tab===id?N:MU,fontWeight:tab===id?700:500,fontSize:13,cursor:"pointer"}}>{l}</button>)}
+        </div>
+        <div style={{padding:"14px 20px",flex:1,overflowY:"auto",maxHeight:180}}>
+          {tab==="desc"&&<p style={{fontSize:13.5,color:SL,lineHeight:1.7,margin:0}}>{p.desc||"Ingen beskrivning tillgänglig."}</p>}
+          {tab==="specs"&&(!specs.length?<div style={{fontSize:13,color:GH}}>Inga specifikationer registrerade.</div>:
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+              <thead><tr style={{background:BLL}}>{["Parameter","Värde","Enhet"].map(h=><th key={h} style={{padding:"7px 11px",textAlign:"left",fontSize:10.5,fontWeight:700,textTransform:"uppercase",color:BL,borderBottom:`1px solid ${BLM}`}}>{h}</th>)}</tr></thead>
+              <tbody>{specs.filter(s=>s.param).map((s,i)=><tr key={s.id} style={{background:i%2===0?"#fff":S2,borderBottom:`1px solid ${LN}`}}><td style={{padding:"7px 11px",fontWeight:600,color:INK}}>{s.param}</td><td style={{padding:"7px 11px",fontFamily:"monospace",color:N,fontWeight:600}}>{s.value}</td><td style={{padding:"7px 11px",color:MU,fontSize:12}}>{s.unit}</td></tr>)}</tbody>
+            </table>)}
+        </div>
+      </div>
+    </div>
   </div>;
 }
 
 /* ── CART PANEL ── */
 function CartPanel({cart,db,cartNote,setCartNote,chQ,rmC,onClose,onQuote,onClear,catBy}){
-const en=Object.entries(cart).filter(([,q])=>q>0);
-const tot=en.reduce((s,[an,q])=>{const p=db.products.find(x=>x.artNr===an);return s+(p&&p.price?p.price*q:0);},0);
-return <div style={{position:“fixed”,inset:0,zIndex:400,display:“flex”,justifyContent:“flex-end”}}>
-<div style={{position:“absolute”,inset:0,background:“rgba(10,15,30,.45)”}} onClick={onClose}/>
-<div style={{position:“relative”,width:450,maxWidth:“95vw”,height:“100vh”,background:”#fff”,borderLeft:`1px solid ${LN}`,display:“flex”,flexDirection:“column”,boxShadow:“0 24px 80px rgba(0,0,0,.14)”}}>
-<div style={{background:N,padding:“0 20px”,height:62,display:“flex”,alignItems:“center”,justifyContent:“space-between”,flexShrink:0}}>
-<div><div style={{fontFamily:“Syne,sans-serif”,fontSize:16,fontWeight:700,color:”#fff”}}>🛒 Varukorg</div><div style={{fontSize:10.5,color:“rgba(255,255,255,.4)”,fontFamily:“monospace”,marginTop:1}}>{en.length} artikel{en.length!==1?“ar”:””}</div></div>
-<button onClick={onClose} style={{width:30,height:30,background:“rgba(255,255,255,.1)”,border:“1px solid rgba(255,255,255,.15)”,borderRadius:8,color:“rgba(255,255,255,.7)”,fontSize:12,cursor:“pointer”}}>✕</button>
-</div>
-<div style={{flex:1,overflowY:“auto”,padding:“13px 20px”}}>
-{!en.length?<div style={{textAlign:“center”,padding:“56px 20px”,color:GH}}><div style={{fontSize:40,opacity:.3,marginBottom:10}}>🛒</div><div style={{fontSize:14,fontWeight:700,color:MU,fontFamily:“Syne,sans-serif”}}>Varukorgen är tom</div></div>:
-en.map(([an,q])=>{const p=db.products.find(x=>x.artNr===an);if(!p)return null;const cat=catBy(p.catId);
-return <div key={an} style={{display:“flex”,gap:11,padding:“12px 0”,borderBottom:`1px solid ${LN}`,alignItems:“flex-start”}}>
-<div style={{width:48,height:48,background:BG,border:`1px solid ${LN}`,borderRadius:8,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:19,overflow:“hidden”,flexShrink:0}}>{p.img?<img src={p.img} style={{width:“100%”,height:“100%”,objectFit:“cover”}}/>:cat.icon}</div>
-<div style={{flex:1,minWidth:0}}>
-<div style={{fontSize:10,fontFamily:“monospace”,color:BL,marginBottom:1}}>{an}</div>
-<div style={{fontSize:13,fontWeight:600,color:INK,overflow:“hidden”,textOverflow:“ellipsis”,whiteSpace:“nowrap”}}>{p.name}</div>
-<div style={{fontSize:11,color:MU,marginTop:2,fontFamily:“monospace”}}>{p.price?p.price.toLocaleString(“sv-SE”,{minimumFractionDigits:2,maximumFractionDigits:2})+” kr/st”:“Pris på beg.”}</div>
-</div>
-<div style={{display:“flex”,flexDirection:“column”,alignItems:“flex-end”,gap:6,flexShrink:0}}>
-<div style={{fontSize:13,fontWeight:700,fontFamily:“monospace”,color:INK}}>{p.price?kr2(p.price*q):”—”}</div>
-<div style={{display:“flex”,alignItems:“center”,background:BG,border:`1.5px solid ${LN}`,borderRadius:8,overflow:“hidden”}}>
-<button onClick={()=>chQ(an,-1)} style={{width:26,height:26,border:“none”,background:“none”,fontSize:14,cursor:“pointer”,color:SL}}>−</button>
-<span style={{fontSize:12,fontFamily:“monospace”,fontWeight:700,minWidth:26,textAlign:“center”}}>{q}</span>
-<button onClick={()=>chQ(an,1)} style={{width:26,height:26,border:“none”,background:“none”,fontSize:14,cursor:“pointer”,color:SL}}>+</button>
-</div>
-<button onClick={()=>rmC(an)} style={{border:“none”,background:“none”,color:GH,fontSize:12,cursor:“pointer”}}>✕</button>
-</div>
-</div>;})}
-</div>
-<div style={{flexShrink:0,borderTop:`1px solid ${LN}`,background:S2}}>
-<div style={{padding:“12px 20px 0”}}><textarea value={cartNote} onChange={e=>setCartNote(e.target.value)} rows={2} placeholder=“Notering…” style={{…inp(),height:“auto”,padding:“8px 11px”,resize:“none”,fontSize:13}}/></div>
-{tot>0&&<div style={{padding:“10px 20px 0”,display:“flex”,justifyContent:“space-between”,alignItems:“center”}}><span style={{fontFamily:“Syne,sans-serif”,fontSize:14,fontWeight:700}}>Totalt</span><span style={{fontSize:16,fontFamily:“monospace”,fontWeight:700,color:N}}>{kr2(tot)}</span></div>}
-<div style={{padding:“12px 20px 18px”,display:“flex”,flexDirection:“column”,gap:7}}>
-<button onClick={onQuote} style={{…b(N),width:“100%”,height:46,fontSize:14}}>📧 Skicka offertförfrågan</button>
-<button onClick={onClear} style={{…b(”#fff”,SL),width:“100%”,height:38,border:`1.5px solid ${LN}`,fontSize:13}}>🗑 Töm varukorg</button>
-</div>
-</div>
-</div>
-
+  const en=Object.entries(cart).filter(([,q])=>q>0);
+  const tot=en.reduce((s,[an,q])=>{const p=db.products.find(x=>x.artNr===an);return s+(p&&p.price?p.price*q:0);},0);
+  return <div style={{position:"fixed",inset:0,zIndex:400,display:"flex",justifyContent:"flex-end"}}>
+    <div style={{position:"absolute",inset:0,background:"rgba(10,15,30,.45)"}} onClick={onClose}/>
+    <div style={{position:"relative",width:450,maxWidth:"95vw",height:"100vh",background:"#fff",borderLeft:`1px solid ${LN}`,display:"flex",flexDirection:"column",boxShadow:"0 24px 80px rgba(0,0,0,.14)"}}>
+      <div style={{background:N,padding:"0 20px",height:62,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <div><div style={{fontFamily:"Syne,sans-serif",fontSize:16,fontWeight:700,color:"#fff"}}>🛒 Varukorg</div><div style={{fontSize:10.5,color:"rgba(255,255,255,.4)",fontFamily:"monospace",marginTop:1}}>{en.length} artikel{en.length!==1?"ar":""}</div></div>
+        <button onClick={onClose} style={{width:30,height:30,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",borderRadius:8,color:"rgba(255,255,255,.7)",fontSize:12,cursor:"pointer"}}>✕</button>
+      </div>
+      <div style={{flex:1,overflowY:"auto",padding:"13px 20px"}}>
+        {!en.length?<div style={{textAlign:"center",padding:"56px 20px",color:GH}}><div style={{fontSize:40,opacity:.3,marginBottom:10}}>🛒</div><div style={{fontSize:14,fontWeight:700,color:MU,fontFamily:"Syne,sans-serif"}}>Varukorgen är tom</div></div>:
+        en.map(([an,q])=>{const p=db.products.find(x=>x.artNr===an);if(!p)return null;const cat=catBy(p.catId);
+          return <div key={an} style={{display:"flex",gap:11,padding:"12px 0",borderBottom:`1px solid ${LN}`,alignItems:"flex-start"}}>
+            <div style={{width:48,height:48,background:BG,border:`1px solid ${LN}`,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,overflow:"hidden",flexShrink:0}}>{p.img?<img src={p.img} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:cat.icon}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:10,fontFamily:"monospace",color:BL,marginBottom:1}}>{an}</div>
+              <div style={{fontSize:13,fontWeight:600,color:INK,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
+              <div style={{fontSize:11,color:MU,marginTop:2,fontFamily:"monospace"}}>{p.price?p.price.toLocaleString("sv-SE",{minimumFractionDigits:2,maximumFractionDigits:2})+" kr/st":"Pris på beg."}</div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
+              <div style={{fontSize:13,fontWeight:700,fontFamily:"monospace",color:INK}}>{p.price?kr2(p.price*q):"—"}</div>
+              <div style={{display:"flex",alignItems:"center",background:BG,border:`1.5px solid ${LN}`,borderRadius:8,overflow:"hidden"}}>
+                <button onClick={()=>chQ(an,-1)} style={{width:26,height:26,border:"none",background:"none",fontSize:14,cursor:"pointer",color:SL}}>−</button>
+                <span style={{fontSize:12,fontFamily:"monospace",fontWeight:700,minWidth:26,textAlign:"center"}}>{q}</span>
+                <button onClick={()=>chQ(an,1)} style={{width:26,height:26,border:"none",background:"none",fontSize:14,cursor:"pointer",color:SL}}>+</button>
+              </div>
+              <button onClick={()=>rmC(an)} style={{border:"none",background:"none",color:GH,fontSize:12,cursor:"pointer"}}>✕</button>
+            </div>
+          </div>;})}
+      </div>
+      <div style={{flexShrink:0,borderTop:`1px solid ${LN}`,background:S2}}>
+        <div style={{padding:"12px 20px 0"}}><textarea value={cartNote} onChange={e=>setCartNote(e.target.value)} rows={2} placeholder="Notering…" style={{...inp(),height:"auto",padding:"8px 11px",resize:"none",fontSize:13}}/></div>
+        {tot>0&&<div style={{padding:"10px 20px 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontFamily:"Syne,sans-serif",fontSize:14,fontWeight:700}}>Totalt</span><span style={{fontSize:16,fontFamily:"monospace",fontWeight:700,color:N}}>{kr2(tot)}</span></div>}
+        <div style={{padding:"12px 20px 18px",display:"flex",flexDirection:"column",gap:7}}>
+          <button onClick={onQuote} style={{...b(N),width:"100%",height:46,fontSize:14}}>📧 Skicka offertförfrågan</button>
+          <button onClick={onClear} style={{...b("#fff",SL),width:"100%",height:38,border:`1.5px solid ${LN}`,fontSize:13}}>🗑 Töm varukorg</button>
+        </div>
+      </div>
+    </div>
   </div>;
 }
 
 /* ── QUOTE MODAL ── */
 function QuoteModal({cart,db,selPay,setSelPay,qN,setQN,qC,setQC,qE,setQE,qPh,setQPh,qO,setQO,qD,setQD,qA,setQA,qM,setQM,cVal,onSend,onClose}){
-return <div style={{padding:22}}>
-<div style={{display:“flex”,alignItems:“center”,justifyContent:“space-between”,marginBottom:18}}>
-<div style={{display:“flex”,alignItems:“center”,gap:10}}><div style={{width:36,height:36,borderRadius:8,background:BLL,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:16}}>📧</div><div><div style={{fontFamily:“Syne,sans-serif”,fontSize:15,fontWeight:700}}>Offertförfrågan</div><div style={{fontSize:12,color:MU}}>PBA Solution AB</div></div></div>
-<button onClick={onClose} style={{width:28,height:28,background:BG,border:`1.5px solid ${LN}`,borderRadius:7,color:SL,fontSize:12,cursor:“pointer”}}>✕</button>
-</div>
-<div style={{fontSize:10.5,fontWeight:700,textTransform:“uppercase”,letterSpacing:.9,color:MU,marginBottom:8}}>Betalningssätt</div>
-<div style={{display:“grid”,gap:7,marginBottom:16}}>
-{PAY.map(m=><div key={m.id} onClick={()=>setSelPay(m.id)} style={{display:“flex”,alignItems:“center”,gap:11,padding:“12px 14px”,border:`2px solid ${selPay===m.id?BL:LN}`,borderRadius:11,cursor:“pointer”,background:selPay===m.id?BLL:”#fff”,transition:“all .15s”}}>
-<span style={{fontSize:22}}>{m.icon}</span>
-<div><div style={{fontWeight:600,fontSize:13.5}}>{m.label}</div><div style={{fontSize:11.5,color:MU}}>{m.desc}</div></div>
-<div style={{marginLeft:“auto”,width:17,height:17,borderRadius:“50%”,border:`2px solid ${selPay===m.id?BL:GH}`,display:“flex”,alignItems:“center”,justifyContent:“center”}}>{selPay===m.id&&<div style={{width:7,height:7,borderRadius:“50%”,background:BL}}/>}</div>
-</div>)}
-</div>
-<div style={{fontSize:10.5,fontWeight:700,textTransform:“uppercase”,letterSpacing:.9,color:MU,marginBottom:8}}>Uppgifter</div>
-<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:9,marginBottom:14}}>
-<FI label="Namn *"><input value={qN} onChange={e=>setQN(e.target.value)} style={inp()} placeholder=“Förnamn Efternamn”/></FI>
-<FI label="Företag"><input value={qC} onChange={e=>setQC(e.target.value)} style={inp()} placeholder=“AB…”/></FI>
-<FI label="E-post *"><input value={qE} onChange={e=>setQE(e.target.value)} style={inp()} placeholder=“din@email.se” type=“email”/></FI>
-<FI label="Telefon"><input value={qPh} onChange={e=>setQPh(e.target.value)} style={inp()} placeholder=”+46…”/></FI>
-<FI label="Faktureringsadress" full><input value={qA} onChange={e=>setQA(e.target.value)} style={inp()} placeholder=“Gatuadress, postnr Stad”/></FI>
-<FI label="Meddelande" full><textarea value={qM} onChange={e=>setQM(e.target.value)} style={{…inp(),height:“auto”,padding:“9px 11px”}} rows={2} placeholder=“Önskemål…”/></FI>
-</div>
-<div style={{background:S2,border:`1px solid ${LN}`,borderRadius:11,padding:13,marginBottom:4,maxHeight:160,overflow:“auto”}}>
-{Object.entries(cart).filter(([,q])=>q>0).map(([an,q])=>{const p=db.products.find(x=>x.artNr===an);const line=(p?.price||0)*q;return <div key={an} style={{display:“flex”,justifyContent:“space-between”,padding:“4px 0”,borderBottom:`1px solid ${LN}`,fontSize:13}}><span style={{color:SL}}>{q}× {an} — {p?.name}</span><span style={{fontFamily:“monospace”,fontWeight:600,color:N}}>{p?.price?kr2(line):”—”}</span></div>;})}
-<div style={{display:“flex”,justifyContent:“space-between”,padding:“8px 0 0”,fontWeight:700,fontSize:13}}><span>Totalt (exkl. moms)</span><span style={{fontFamily:“monospace”,color:N}}>{cVal()>0?kr2(cVal()):“Pris på begäran”}</span></div>
-</div>
-<div style={{display:“flex”,gap:8,justifyContent:“flex-end”,paddingTop:14}}>
-<button onClick={onClose} style={{…b(”#fff”,SL),border:`1.5px solid ${LN}`}}>Avbryt</button>
-<button onClick={onSend} style={b(N)}>📧 Skicka</button>
-</div>
-
+  return <div style={{padding:22}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
+      <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:36,height:36,borderRadius:8,background:BLL,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>📧</div><div><div style={{fontFamily:"Syne,sans-serif",fontSize:15,fontWeight:700}}>Offertförfrågan</div><div style={{fontSize:12,color:MU}}>PBA Solution AB</div></div></div>
+      <button onClick={onClose} style={{width:28,height:28,background:BG,border:`1.5px solid ${LN}`,borderRadius:7,color:SL,fontSize:12,cursor:"pointer"}}>✕</button>
+    </div>
+    <div style={{fontSize:10.5,fontWeight:700,textTransform:"uppercase",letterSpacing:.9,color:MU,marginBottom:8}}>Betalningssätt</div>
+    <div style={{display:"grid",gap:7,marginBottom:16}}>
+      {PAY.map(m=><div key={m.id} onClick={()=>setSelPay(m.id)} style={{display:"flex",alignItems:"center",gap:11,padding:"12px 14px",border:`2px solid ${selPay===m.id?BL:LN}`,borderRadius:11,cursor:"pointer",background:selPay===m.id?BLL:"#fff",transition:"all .15s"}}>
+        <span style={{fontSize:22}}>{m.icon}</span>
+        <div><div style={{fontWeight:600,fontSize:13.5}}>{m.label}</div><div style={{fontSize:11.5,color:MU}}>{m.desc}</div></div>
+        <div style={{marginLeft:"auto",width:17,height:17,borderRadius:"50%",border:`2px solid ${selPay===m.id?BL:GH}`,display:"flex",alignItems:"center",justifyContent:"center"}}>{selPay===m.id&&<div style={{width:7,height:7,borderRadius:"50%",background:BL}}/>}</div>
+      </div>)}
+    </div>
+    <div style={{fontSize:10.5,fontWeight:700,textTransform:"uppercase",letterSpacing:.9,color:MU,marginBottom:8}}>Uppgifter</div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:14}}>
+      <FI label="Namn *"><input value={qN} onChange={e=>setQN(e.target.value)} style={inp()} placeholder="Förnamn Efternamn"/></FI>
+      <FI label="Företag"><input value={qC} onChange={e=>setQC(e.target.value)} style={inp()} placeholder="AB..."/></FI>
+      <FI label="E-post *"><input value={qE} onChange={e=>setQE(e.target.value)} style={inp()} placeholder="din@email.se" type="email"/></FI>
+      <FI label="Telefon"><input value={qPh} onChange={e=>setQPh(e.target.value)} style={inp()} placeholder="+46..."/></FI>
+      <FI label="Faktureringsadress" full><input value={qA} onChange={e=>setQA(e.target.value)} style={inp()} placeholder="Gatuadress, postnr Stad"/></FI>
+      <FI label="Meddelande" full><textarea value={qM} onChange={e=>setQM(e.target.value)} style={{...inp(),height:"auto",padding:"9px 11px"}} rows={2} placeholder="Önskemål…"/></FI>
+    </div>
+    <div style={{background:S2,border:`1px solid ${LN}`,borderRadius:11,padding:13,marginBottom:4,maxHeight:160,overflow:"auto"}}>
+      {Object.entries(cart).filter(([,q])=>q>0).map(([an,q])=>{const p=db.products.find(x=>x.artNr===an);const line=(p?.price||0)*q;return <div key={an} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:`1px solid ${LN}`,fontSize:13}}><span style={{color:SL}}>{q}× {an} — {p?.name}</span><span style={{fontFamily:"monospace",fontWeight:600,color:N}}>{p?.price?kr2(line):"—"}</span></div>;})}
+      <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0 0",fontWeight:700,fontSize:13}}><span>Totalt (exkl. moms)</span><span style={{fontFamily:"monospace",color:N}}>{cVal()>0?kr2(cVal()):"Pris på begäran"}</span></div>
+    </div>
+    <div style={{display:"flex",gap:8,justifyContent:"flex-end",paddingTop:14}}>
+      <button onClick={onClose} style={{...b("#fff",SL),border:`1.5px solid ${LN}`}}>Avbryt</button>
+      <button onClick={onSend} style={b(N)}>📧 Skicka</button>
+    </div>
   </div>;
 }
 
 /* ── ORDERS ── */
 function Orders({db,cu,setInqM}){
-const orders=db.orders.filter(o=>!cu||cu.role===“admin”||o.userId===cu.id);
-return <div style={{maxWidth:1400,margin:“0 auto”,padding:“22px 22px 80px”}}>
-<div style={{background:”#fff”,border:`1px solid ${LN}`,borderRadius:15,overflow:“hidden”}}>
-<div style={{padding:“15px 19px”,borderBottom:`1px solid ${LN}`}}><div style={{fontFamily:“Syne,sans-serif”,fontSize:15,fontWeight:700}}>📋 Offertförfrågningar</div></div>
-{!orders.length?<div style={{textAlign:“center”,padding:“48px”,color:GH}}><div style={{fontSize:40,opacity:.3,marginBottom:10}}>📋</div><div style={{fontFamily:“Syne,sans-serif”,fontSize:16,fontWeight:700,color:MU}}>Inga förfrågningar</div></div>:
-<table style={{width:“100%”,borderCollapse:“collapse”,fontSize:13}}>
-<thead><tr style={{background:S2}}>{[”#”,“Datum”,“Betalning”,“Art.”,“Värde”,“Status”,””].map(h=><th key={h} style={{padding:“9px 15px”,textAlign:h===“Värde”?“right”:“left”,fontSize:10,fontWeight:700,textTransform:“uppercase”,letterSpacing:.9,color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
-<tbody>{[…orders].reverse().map(o=><tr key={o.id} onClick={()=>setInqM(o)} style={{cursor:“pointer”,borderBottom:`1px solid ${LN}`}} onMouseEnter={e=>e.currentTarget.style.background=BLL} onMouseLeave={e=>e.currentTarget.style.background=“transparent”}>
-<td style={{padding:“10px 15px”}}><span style={{fontFamily:“monospace”,fontSize:11,color:BL}}>#{String(db.orders.indexOf(o)+1).padStart(4,“0”)}</span></td>
-<td style={{padding:“10px 15px”}}>{new Date(o.date).toLocaleDateString(“sv-SE”)}</td>
-<td style={{padding:“10px 15px”,fontSize:12}}>{PAY.find(m=>m.id===o.payMethod)?.label||“Faktura”}</td>
-<td style={{padding:“10px 15px”}}>{o.items.length} art.</td>
-<td style={{padding:“10px 15px”,textAlign:“right”,fontFamily:“monospace”,fontSize:12}}>{o.totalValue>0?kr2(o.totalValue):”—”}</td>
-<td style={{padding:“10px 15px”}}><SChip s={o.status}/></td>
-<td style={{padding:“10px 15px”,textAlign:“center”}}><button style={{…b(BG,INK),height:26,padding:“0 9px”,border:`1.5px solid ${LN}`,fontSize:11}} onClick={e=>{e.stopPropagation();setInqM(o);}}>👁</button></td>
-</tr>)}</tbody>
-</table>}
-</div>
-
+  const orders=db.orders.filter(o=>!cu||cu.role==="admin"||o.userId===cu.id);
+  return <div style={{maxWidth:1400,margin:"0 auto",padding:"22px 22px 80px"}}>
+    <div style={{background:"#fff",border:`1px solid ${LN}`,borderRadius:15,overflow:"hidden"}}>
+      <div style={{padding:"15px 19px",borderBottom:`1px solid ${LN}`}}><div style={{fontFamily:"Syne,sans-serif",fontSize:15,fontWeight:700}}>📋 Offertförfrågningar</div></div>
+      {!orders.length?<div style={{textAlign:"center",padding:"48px",color:GH}}><div style={{fontSize:40,opacity:.3,marginBottom:10}}>📋</div><div style={{fontFamily:"Syne,sans-serif",fontSize:16,fontWeight:700,color:MU}}>Inga förfrågningar</div></div>:
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+        <thead><tr style={{background:S2}}>{["#","Datum","Betalning","Art.","Värde","Status",""].map(h=><th key={h} style={{padding:"9px 15px",textAlign:h==="Värde"?"right":"left",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.9,color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
+        <tbody>{[...orders].reverse().map(o=><tr key={o.id} onClick={()=>setInqM(o)} style={{cursor:"pointer",borderBottom:`1px solid ${LN}`}} onMouseEnter={e=>e.currentTarget.style.background=BLL} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+          <td style={{padding:"10px 15px"}}><span style={{fontFamily:"monospace",fontSize:11,color:BL}}>#{String(db.orders.indexOf(o)+1).padStart(4,"0")}</span></td>
+          <td style={{padding:"10px 15px"}}>{new Date(o.date).toLocaleDateString("sv-SE")}</td>
+          <td style={{padding:"10px 15px",fontSize:12}}>{PAY.find(m=>m.id===o.payMethod)?.label||"Faktura"}</td>
+          <td style={{padding:"10px 15px"}}>{o.items.length} art.</td>
+          <td style={{padding:"10px 15px",textAlign:"right",fontFamily:"monospace",fontSize:12}}>{o.totalValue>0?kr2(o.totalValue):"—"}</td>
+          <td style={{padding:"10px 15px"}}><SChip s={o.status}/></td>
+          <td style={{padding:"10px 15px",textAlign:"center"}}><button style={{...b(BG,INK),height:26,padding:"0 9px",border:`1.5px solid ${LN}`,fontSize:11}} onClick={e=>{e.stopPropagation();setInqM(o);}}>👁</button></td>
+        </tr>)}</tbody>
+      </table>}
+    </div>
   </div>;
 }
 
 /* ── ADMIN ── */
 function Admin({db,upd,aSec,setASec,openEdit,setInqM,setCatM,setSubM,toast2,catBy}){
-const navI=[[“dash”,“📊 Dashboard”],[“prods”,“📦 Artiklar”],[“cats”,“🗂 Kategorier”],[“users”,“👥 Användare”],[“inqs”,“📧 Förfrågningar”]];
-const pend=db.users.filter(u=>!u.approved&&u.role!==“admin”).length;
-const newI=db.orders.filter(o=>o.status===“Ny”).length;
-return <div style={{maxWidth:1400,margin:“0 auto”,padding:“22px 22px 80px”,display:“flex”,gap:20}}>
-<div style={{width:206,flexShrink:0}}>
-<div style={{fontSize:10,fontWeight:700,textTransform:“uppercase”,letterSpacing:1.1,color:MU,padding:“0 9px 9px”,marginBottom:2}}>Administration</div>
-{navI.map(([s,l])=><div key={s} onClick={()=>setASec(s)} style={{display:“flex”,alignItems:“center”,gap:9,padding:“8px 11px”,borderRadius:8,fontSize:13.5,fontWeight:aSec===s?600:500,color:aSec===s?BL:SL,background:aSec===s?BLL:“transparent”,cursor:“pointer”,marginBottom:2,userSelect:“none”}}>
-{l}{s===“users”&&pend>0&&<span style={{marginLeft:“auto”,background:AM,color:”#fff”,borderRadius:10,fontSize:9.5,padding:“1px 5px”}}>{pend}</span>}
-{s===“inqs”&&newI>0&&<span style={{marginLeft:“auto”,background:RD,color:”#fff”,borderRadius:10,fontSize:9.5,padding:“1px 5px”}}>{newI}</span>}
-</div>)}
-</div>
-<div style={{flex:1,minWidth:0}}>
-{aSec===“dash”&&<ADash db={db} setInqM={setInqM}/>}
-{aSec===“prods”&&<AProds db={db} openEdit={openEdit} catBy={catBy}/>}
-{aSec===“cats”&&<ACats db={db} upd={upd} setCatM={setCatM} setSubM={setSubM} toast2={toast2}/>}
-{aSec===“users”&&<AUsers db={db} upd={upd} toast2={toast2}/>}
-{aSec===“inqs”&&<AInqs db={db} setInqM={setInqM}/>}
-</div>
-
+  const navI=[["dash","📊 Dashboard"],["prods","📦 Artiklar"],["cats","🗂 Kategorier"],["users","👥 Användare"],["inqs","📧 Förfrågningar"]];
+  const pend=db.users.filter(u=>!u.approved&&u.role!=="admin").length;
+  const newI=db.orders.filter(o=>o.status==="Ny").length;
+  return <div style={{maxWidth:1400,margin:"0 auto",padding:"22px 22px 80px",display:"flex",gap:20}}>
+    <div style={{width:206,flexShrink:0}}>
+      <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:1.1,color:MU,padding:"0 9px 9px",marginBottom:2}}>Administration</div>
+      {navI.map(([s,l])=><div key={s} onClick={()=>setASec(s)} style={{display:"flex",alignItems:"center",gap:9,padding:"8px 11px",borderRadius:8,fontSize:13.5,fontWeight:aSec===s?600:500,color:aSec===s?BL:SL,background:aSec===s?BLL:"transparent",cursor:"pointer",marginBottom:2,userSelect:"none"}}>
+        {l}{s==="users"&&pend>0&&<span style={{marginLeft:"auto",background:AM,color:"#fff",borderRadius:10,fontSize:9.5,padding:"1px 5px"}}>{pend}</span>}
+        {s==="inqs"&&newI>0&&<span style={{marginLeft:"auto",background:RD,color:"#fff",borderRadius:10,fontSize:9.5,padding:"1px 5px"}}>{newI}</span>}
+      </div>)}
+    </div>
+    <div style={{flex:1,minWidth:0}}>
+      {aSec==="dash"&&<ADash db={db} setInqM={setInqM}/>}
+      {aSec==="prods"&&<AProds db={db} openEdit={openEdit} catBy={catBy}/>}
+      {aSec==="cats"&&<ACats db={db} upd={upd} setCatM={setCatM} setSubM={setSubM} toast2={toast2}/>}
+      {aSec==="users"&&<AUsers db={db} upd={upd} toast2={toast2}/>}
+      {aSec==="inqs"&&<AInqs db={db} setInqM={setInqM}/>}
+    </div>
   </div>;
 }
 
 function ADash({db,setInqM}){
-const pend=db.users.filter(u=>!u.approved&&u.role!==“admin”).length;
-const newI=db.orders.filter(o=>o.status===“Ny”).length;
-const tot=db.orders.reduce((s,o)=>s+(o.totalValue||0),0);
-return <>
-<div style={{display:“grid”,gridTemplateColumns:“repeat(4,1fr)”,gap:13,marginBottom:18}}>
-{[[db.products.length,“Artiklar”,N,`${db.products.filter(p=>st(p)==="ok").length} i lager`,GR],[db.users.filter(u=>u.approved).length,“Kunder”,BL,pend?pend+” väntar”:“Alla godkända”,pend?AM:GR],[db.orders.length,“Förfrågningar”,AM,newI?newI+” nya”:“Alla behandlade”,newI?AM:GR],[tot,“Offertvärde”,GR]].map(([v,l,c,note,nc])=><div key={l} style={{background:”#fff”,border:`1px solid ${LN}`,borderRadius:15,padding:“15px 17px”}}><div style={{fontFamily:“Syne,sans-serif”,fontSize:l===“Offertvärde”?17:24,fontWeight:800,color:c}}>{l===“Offertvärde”?tot>0?tot.toLocaleString(“sv-SE”,{maximumFractionDigits:0})+” kr”:”—”:v}</div><div style={{fontSize:10.5,textTransform:“uppercase”,letterSpacing:.7,color:MU,marginTop:3,fontWeight:600}}>{l}</div>{note&&<div style={{fontSize:12,fontWeight:600,marginTop:7,color:nc}}>{note}</div>}</div>)}
-</div>
-<Panel title="Senaste förfrågningar">
-{!db.orders.length?<Empty txt="Inga förfrågningar"/>:
-<table style={{width:“100%”,borderCollapse:“collapse”,fontSize:13}}>
-<thead><tr style={{background:S2}}>{[”#”,“Kund”,“Företag”,“Betalning”,“Värde”,“Status”].map(h=><th key={h} style={{padding:“9px 15px”,textAlign:h===“Värde”?“right”:“left”,fontSize:10,fontWeight:700,textTransform:“uppercase”,letterSpacing:.9,color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
-<tbody>{[…db.orders].reverse().slice(0,6).map(o=><tr key={o.id} onClick={()=>setInqM(o)} style={{cursor:“pointer”,borderBottom:`1px solid ${LN}`}} onMouseEnter={e=>e.currentTarget.style.background=BLL} onMouseLeave={e=>e.currentTarget.style.background=“transparent”}>
-<td style={{padding:“10px 15px”}}><span style={{fontFamily:“monospace”,fontSize:11,color:BL}}>#{String(db.orders.indexOf(o)+1).padStart(4,“0”)}</span></td>
-<td style={{padding:“10px 15px”,fontWeight:600}}>{o.customerName}</td><td style={{padding:“10px 15px”}}>{o.company||”—”}</td>
-<td style={{padding:“10px 15px”,fontSize:12}}>{PAY.find(m=>m.id===o.payMethod)?.label||“Faktura”}</td>
-<td style={{padding:“10px 15px”,textAlign:“right”,fontFamily:“monospace”,fontSize:12}}>{o.totalValue>0?kr2(o.totalValue):”—”}</td>
-<td style={{padding:“10px 15px”}}><SChip s={o.status}/></td>
-</tr>)}</tbody>
-</table>}
-</Panel>
-</>;
+  const pend=db.users.filter(u=>!u.approved&&u.role!=="admin").length;
+  const newI=db.orders.filter(o=>o.status==="Ny").length;
+  const tot=db.orders.reduce((s,o)=>s+(o.totalValue||0),0);
+  return <>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:13,marginBottom:18}}>
+      {[[db.products.length,"Artiklar",N,`${db.products.filter(p=>st(p)==="ok").length} i lager`,GR],[db.users.filter(u=>u.approved).length,"Kunder",BL,pend?pend+" väntar":"Alla godkända",pend?AM:GR],[db.orders.length,"Förfrågningar",AM,newI?newI+" nya":"Alla behandlade",newI?AM:GR],[tot,"Offertvärde",GR]].map(([v,l,c,note,nc])=><div key={l} style={{background:"#fff",border:`1px solid ${LN}`,borderRadius:15,padding:"15px 17px"}}><div style={{fontFamily:"Syne,sans-serif",fontSize:l==="Offertvärde"?17:24,fontWeight:800,color:c}}>{l==="Offertvärde"?tot>0?tot.toLocaleString("sv-SE",{maximumFractionDigits:0})+" kr":"—":v}</div><div style={{fontSize:10.5,textTransform:"uppercase",letterSpacing:.7,color:MU,marginTop:3,fontWeight:600}}>{l}</div>{note&&<div style={{fontSize:12,fontWeight:600,marginTop:7,color:nc}}>{note}</div>}</div>)}
+    </div>
+    <Panel title="Senaste förfrågningar">
+      {!db.orders.length?<Empty txt="Inga förfrågningar"/>:
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+        <thead><tr style={{background:S2}}>{["#","Kund","Företag","Betalning","Värde","Status"].map(h=><th key={h} style={{padding:"9px 15px",textAlign:h==="Värde"?"right":"left",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.9,color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
+        <tbody>{[...db.orders].reverse().slice(0,6).map(o=><tr key={o.id} onClick={()=>setInqM(o)} style={{cursor:"pointer",borderBottom:`1px solid ${LN}`}} onMouseEnter={e=>e.currentTarget.style.background=BLL} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+          <td style={{padding:"10px 15px"}}><span style={{fontFamily:"monospace",fontSize:11,color:BL}}>#{String(db.orders.indexOf(o)+1).padStart(4,"0")}</span></td>
+          <td style={{padding:"10px 15px",fontWeight:600}}>{o.customerName}</td><td style={{padding:"10px 15px"}}>{o.company||"—"}</td>
+          <td style={{padding:"10px 15px",fontSize:12}}>{PAY.find(m=>m.id===o.payMethod)?.label||"Faktura"}</td>
+          <td style={{padding:"10px 15px",textAlign:"right",fontFamily:"monospace",fontSize:12}}>{o.totalValue>0?kr2(o.totalValue):"—"}</td>
+          <td style={{padding:"10px 15px"}}><SChip s={o.status}/></td>
+        </tr>)}</tbody>
+      </table>}
+    </Panel>
+  </>;
 }
 
 function AProds({db,openEdit,catBy}){
-const [q,setQ]=useState(””);
-const list=db.products.filter(p=>!q||p.artNr.toLowerCase().includes(q.toLowerCase())||p.name.toLowerCase().includes(q.toLowerCase())||(p.supplier||””).toLowerCase().includes(q.toLowerCase()));
-return <Panel title=“Artikelhantering” actions={<><div style={{position:“relative”}}><span style={{position:“absolute”,left:8,top:“50%”,transform:“translateY(-50%)”,color:GH,fontSize:11}}>🔍</span><input value={q} onChange={e=>setQ(e.target.value)} placeholder=“Sök…” style={{…inp(),height:34,paddingLeft:26,width:180}}/></div><button onClick={()=>openEdit({id:””,artNr:””,name:””,supplier:””,desc:””,price:””,buyPrice:””,stock:0,minStock:5,catId:””,subId:””,img:””,images:[],specs:[]})} style={b(N)}>+ Ny artikel</button></>}>
-<table style={{width:“100%”,borderCollapse:“collapse”,fontSize:13}}>
-<thead><tr style={{background:S2}}>{[“Bild”,“Art.nr”,“Benämning”,“Kategori”,“Leverantör”,“Utpris”,“Lager”,“Status”,””].map(h=><th key={h} style={{padding:“9px 15px”,textAlign:[“Utpris”,“Lager”].includes(h)?“right”:“left”,fontSize:10,fontWeight:700,textTransform:“uppercase”,letterSpacing:.9,color:MU,borderBottom:`1px solid ${LN}`,whiteSpace:“nowrap”}}>{h}</th>)}</tr></thead>
-<tbody>{list.map(p=>{const cat=catBy(p.catId);const s=st(p);return <tr key={p.id} style={{borderBottom:`1px solid ${LN}`}} onMouseEnter={e=>e.currentTarget.style.background=S2} onMouseLeave={e=>e.currentTarget.style.background=“transparent”}>
-<td style={{padding:“10px 15px”}}><div style={{width:34,height:34,background:BG,border:`1px solid ${LN}`,borderRadius:7,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:16,overflow:“hidden”}}>{p.img?<img src={p.img} style={{width:“100%”,height:“100%”,objectFit:“cover”}}/>:cat.icon}</div></td>
-<td style={{padding:“10px 15px”}}><span style={{fontFamily:“monospace”,fontSize:11.5,color:BL,fontWeight:500}}>{p.artNr}</span></td>
-<td style={{padding:“10px 15px”}}><span style={{fontWeight:600,color:INK,maxWidth:170,display:“block”,overflow:“hidden”,textOverflow:“ellipsis”,whiteSpace:“nowrap”}}>{p.name}</span>{(p.images||[]).length>1&&<span style={{fontSize:9.5,color:BL,background:BLL,padding:“1px 5px”,borderRadius:4,marginTop:2,display:“inline-block”}}>{p.images.length} bilder</span>}{(p.specs||[]).length>0&&<span style={{fontSize:9.5,color:GR,background:GRL,padding:“1px 5px”,borderRadius:4,marginTop:2,display:“inline-block”,marginLeft:3}}>{p.specs.length} spec</span>}</td>
-<td style={{padding:“10px 15px”}}>{cat.icon} {cat.name}</td>
-<td style={{padding:“10px 15px”,fontSize:12,color:MU}}>{p.supplier||”—”}</td>
-<td style={{padding:“10px 15px”,textAlign:“right”,fontFamily:“monospace”,fontSize:12}}>{p.price?kr2(p.price):”—”}</td>
-<td style={{padding:“10px 15px”,textAlign:“right”,fontWeight:700}}>{p.stock}</td>
-<td style={{padding:“10px 15px”}}><span style={{fontSize:10.5,fontWeight:600,padding:“2px 8px”,borderRadius:20,…(s===“ok”?{background:GRL,color:GR}:s===“lo”?{background:AML,color:AM}:{background:RDL,color:RD})}}>{s===“ok”?“OK”:s===“lo”?“Lågt”:“Slut”}</span></td>
-<td style={{padding:“10px 15px”}}><button onClick={()=>openEdit(p)} style={{width:28,height:28,border:`1.5px solid ${LN}`,borderRadius:7,background:“none”,color:MU,fontSize:11,cursor:“pointer”}}>✏️</button></td>
-</tr>;})}
-</tbody>
-</table>
-</Panel>;
+  const [q,setQ]=useState("");
+  const list=db.products.filter(p=>!q||p.artNr.toLowerCase().includes(q.toLowerCase())||p.name.toLowerCase().includes(q.toLowerCase())||(p.supplier||"").toLowerCase().includes(q.toLowerCase()));
+  return <Panel title="Artikelhantering" actions={<><div style={{position:"relative"}}><span style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",color:GH,fontSize:11}}>🔍</span><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Sök…" style={{...inp(),height:34,paddingLeft:26,width:180}}/></div><button onClick={()=>openEdit({id:"",artNr:"",name:"",supplier:"",desc:"",price:"",buyPrice:"",stock:0,minStock:5,catId:"",subId:"",img:"",images:[],specs:[]})} style={b(N)}>+ Ny artikel</button></>}>
+    <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+      <thead><tr style={{background:S2}}>{["Bild","Art.nr","Benämning","Kategori","Leverantör","Utpris","Lager","Status",""].map(h=><th key={h} style={{padding:"9px 15px",textAlign:["Utpris","Lager"].includes(h)?"right":"left",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.9,color:MU,borderBottom:`1px solid ${LN}`,whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
+      <tbody>{list.map(p=>{const cat=catBy(p.catId);const s=st(p);return <tr key={p.id} style={{borderBottom:`1px solid ${LN}`}} onMouseEnter={e=>e.currentTarget.style.background=S2} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+        <td style={{padding:"10px 15px"}}><div style={{width:34,height:34,background:BG,border:`1px solid ${LN}`,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,overflow:"hidden"}}>{p.img?<img src={p.img} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:cat.icon}</div></td>
+        <td style={{padding:"10px 15px"}}><span style={{fontFamily:"monospace",fontSize:11.5,color:BL,fontWeight:500}}>{p.artNr}</span></td>
+        <td style={{padding:"10px 15px"}}><span style={{fontWeight:600,color:INK,maxWidth:170,display:"block",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</span>{(p.images||[]).length>1&&<span style={{fontSize:9.5,color:BL,background:BLL,padding:"1px 5px",borderRadius:4,marginTop:2,display:"inline-block"}}>{p.images.length} bilder</span>}{(p.specs||[]).length>0&&<span style={{fontSize:9.5,color:GR,background:GRL,padding:"1px 5px",borderRadius:4,marginTop:2,display:"inline-block",marginLeft:3}}>{p.specs.length} spec</span>}</td>
+        <td style={{padding:"10px 15px"}}>{cat.icon} {cat.name}</td>
+        <td style={{padding:"10px 15px",fontSize:12,color:MU}}>{p.supplier||"—"}</td>
+        <td style={{padding:"10px 15px",textAlign:"right",fontFamily:"monospace",fontSize:12}}>{p.price?kr2(p.price):"—"}</td>
+        <td style={{padding:"10px 15px",textAlign:"right",fontWeight:700}}>{p.stock}</td>
+        <td style={{padding:"10px 15px"}}><span style={{fontSize:10.5,fontWeight:600,padding:"2px 8px",borderRadius:20,...(s==="ok"?{background:GRL,color:GR}:s==="lo"?{background:AML,color:AM}:{background:RDL,color:RD})}}>{s==="ok"?"OK":s==="lo"?"Lågt":"Slut"}</span></td>
+        <td style={{padding:"10px 15px"}}><button onClick={()=>openEdit(p)} style={{width:28,height:28,border:`1.5px solid ${LN}`,borderRadius:7,background:"none",color:MU,fontSize:11,cursor:"pointer"}}>✏️</button></td>
+      </tr>;})}
+      </tbody>
+    </table>
+  </Panel>;
 }
 
 function ACats({db,upd,setCatM,setSubM,toast2}){
-const dC=id=>{if(!confirm(“Ta bort?”))return;upd(d=>({…d,cats:d.cats.filter(c=>c.id!==id),subs:d.subs.filter(s=>s.pid!==id)}));toast2(“Borttagen”);};
-const dS=id=>{if(!confirm(“Ta bort?”))return;upd(d=>({…d,subs:d.subs.filter(s=>s.id!==id)}));toast2(“Borttagen”);};
-return <div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:15}}>
-<Panel title=“Kategorier” actions={<button onClick={()=>setCatM({id:””,name:””,icon:””})} style={b(N)}>+ Ny</button>}>
-<table style={{width:“100%”,borderCollapse:“collapse”,fontSize:13}}>
-<thead><tr style={{background:S2}}>{[“Ikon”,“Namn”,“Sub”,“Art.”,””].map(h=><th key={h} style={{padding:“8px 13px”,textAlign:“left”,fontSize:10,fontWeight:700,textTransform:“uppercase”,color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
-<tbody>{db.cats.map(c=>{const sc=db.subs.filter(s=>s.pid===c.id).length;const pc=db.products.filter(p=>p.catId===c.id).length;return <tr key={c.id} style={{borderBottom:`1px solid ${LN}`}}><td style={{padding:“9px 13px”,textAlign:“center”,fontSize:19}}>{c.icon}</td><td style={{padding:“9px 13px”,fontWeight:600}}>{c.name}</td><td style={{padding:“9px 13px”}}>{sc}</td><td style={{padding:“9px 13px”,textAlign:“center”}}>{pc}</td><td style={{padding:“9px 13px”}}><div style={{display:“flex”,gap:3}}><button onClick={()=>setCatM(c)} style={{width:26,height:26,border:`1.5px solid ${LN}`,borderRadius:6,background:“none”,cursor:“pointer”,fontSize:10}}>✏️</button><button onClick={()=>dC(c.id)} style={{width:26,height:26,border:`1.5px solid ${LN}`,borderRadius:6,background:“none”,cursor:“pointer”,fontSize:10}}>🗑</button></div></td></tr>;})}
-</tbody>
-</table>
-</Panel>
-<Panel title=“Underkategorier” actions={<button onClick={()=>setSubM({id:””,name:””,pid:db.cats[0]?.id||””})} style={b(N)}>+ Ny</button>}>
-<table style={{width:“100%”,borderCollapse:“collapse”,fontSize:13}}>
-<thead><tr style={{background:S2}}>{[“Namn”,“Kategori”,“Art.”,””].map(h=><th key={h} style={{padding:“8px 13px”,textAlign:“left”,fontSize:10,fontWeight:700,textTransform:“uppercase”,color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
-<tbody>{db.subs.map(s=>{const par=db.cats.find(c=>c.id===s.pid)||{icon:“⚙️”,name:”—”};const pc=db.products.filter(p=>p.subId===s.id).length;return <tr key={s.id} style={{borderBottom:`1px solid ${LN}`}}><td style={{padding:“9px 13px”,fontWeight:600}}>{s.name}</td><td style={{padding:“9px 13px”,fontSize:12,color:MU}}>{par.icon} {par.name}</td><td style={{padding:“9px 13px”,textAlign:“center”}}>{pc}</td><td style={{padding:“9px 13px”}}><button onClick={()=>dS(s.id)} style={{width:26,height:26,border:`1.5px solid ${LN}`,borderRadius:6,background:“none”,cursor:“pointer”,fontSize:10}}>🗑</button></td></tr>;})}
-</tbody>
-</table>
-</Panel>
-
+  const dC=id=>{if(!confirm("Ta bort?"))return;upd(d=>({...d,cats:d.cats.filter(c=>c.id!==id),subs:d.subs.filter(s=>s.pid!==id)}));toast2("Borttagen");};
+  const dS=id=>{if(!confirm("Ta bort?"))return;upd(d=>({...d,subs:d.subs.filter(s=>s.id!==id)}));toast2("Borttagen");};
+  return <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:15}}>
+    <Panel title="Kategorier" actions={<button onClick={()=>setCatM({id:"",name:"",icon:""})} style={b(N)}>+ Ny</button>}>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+        <thead><tr style={{background:S2}}>{["Ikon","Namn","Sub","Art.",""].map(h=><th key={h} style={{padding:"8px 13px",textAlign:"left",fontSize:10,fontWeight:700,textTransform:"uppercase",color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
+        <tbody>{db.cats.map(c=>{const sc=db.subs.filter(s=>s.pid===c.id).length;const pc=db.products.filter(p=>p.catId===c.id).length;return <tr key={c.id} style={{borderBottom:`1px solid ${LN}`}}><td style={{padding:"9px 13px",textAlign:"center",fontSize:19}}>{c.icon}</td><td style={{padding:"9px 13px",fontWeight:600}}>{c.name}</td><td style={{padding:"9px 13px"}}>{sc}</td><td style={{padding:"9px 13px",textAlign:"center"}}>{pc}</td><td style={{padding:"9px 13px"}}><div style={{display:"flex",gap:3}}><button onClick={()=>setCatM(c)} style={{width:26,height:26,border:`1.5px solid ${LN}`,borderRadius:6,background:"none",cursor:"pointer",fontSize:10}}>✏️</button><button onClick={()=>dC(c.id)} style={{width:26,height:26,border:`1.5px solid ${LN}`,borderRadius:6,background:"none",cursor:"pointer",fontSize:10}}>🗑</button></div></td></tr>;})}
+        </tbody>
+      </table>
+    </Panel>
+    <Panel title="Underkategorier" actions={<button onClick={()=>setSubM({id:"",name:"",pid:db.cats[0]?.id||""})} style={b(N)}>+ Ny</button>}>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+        <thead><tr style={{background:S2}}>{["Namn","Kategori","Art.",""].map(h=><th key={h} style={{padding:"8px 13px",textAlign:"left",fontSize:10,fontWeight:700,textTransform:"uppercase",color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
+        <tbody>{db.subs.map(s=>{const par=db.cats.find(c=>c.id===s.pid)||{icon:"⚙️",name:"—"};const pc=db.products.filter(p=>p.subId===s.id).length;return <tr key={s.id} style={{borderBottom:`1px solid ${LN}`}}><td style={{padding:"9px 13px",fontWeight:600}}>{s.name}</td><td style={{padding:"9px 13px",fontSize:12,color:MU}}>{par.icon} {par.name}</td><td style={{padding:"9px 13px",textAlign:"center"}}>{pc}</td><td style={{padding:"9px 13px"}}><button onClick={()=>dS(s.id)} style={{width:26,height:26,border:`1.5px solid ${LN}`,borderRadius:6,background:"none",cursor:"pointer",fontSize:10}}>🗑</button></td></tr>;})}
+        </tbody>
+      </table>
+    </Panel>
   </div>;
 }
 
 function AUsers({db,upd,toast2}){
-const ap=id=>{upd(d=>({…d,users:d.users.map(u=>u.id===id?{…u,approved:true}:u)}));toast2(“Godkänd”,“ok”);};
-const rj=id=>{if(!confirm(“Avvisa?”))return;upd(d=>({…d,users:d.users.filter(u=>u.id!==id)}));};
-const pend=db.users.filter(u=>!u.approved&&u.role!==“admin”);
-const appr=db.users.filter(u=>u.approved&&u.role!==“admin”);
-return <>
-<Panel title="⏳ Väntar på godkännande" titleColor={AM}>
-{!pend.length?<Empty txt="Inga väntande"/>:<table style={{width:“100%”,borderCollapse:“collapse”,fontSize:13}}>
-<thead><tr style={{background:S2}}>{[“Namn”,“Företag”,“E-post”,“Datum”,“Åtgärd”].map(h=><th key={h} style={{padding:“9px 14px”,textAlign:“left”,fontSize:10,fontWeight:700,textTransform:“uppercase”,color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
-<tbody>{pend.map(u=><tr key={u.id} style={{borderBottom:`1px solid ${LN}`,background:“rgba(255,251,235,.5)”}}><td style={{padding:“9px 14px”,fontWeight:600}}>{u.firstName} {u.lastName}</td><td style={{padding:“9px 14px”}}>{u.company}</td><td style={{padding:“9px 14px”}}>{u.email}</td><td style={{padding:“9px 14px”,fontSize:12,color:MU}}>{new Date(u.registered).toLocaleDateString(“sv-SE”)}</td><td style={{padding:“9px 14px”}}><div style={{display:“flex”,gap:5}}><button onClick={()=>ap(u.id)} style={{…b(GR),height:28,padding:“0 11px”,fontSize:12}}>✓</button><button onClick={()=>rj(u.id)} style={{…b(RD),height:28,padding:“0 11px”,fontSize:12}}>✕</button></div></td></tr>)}
-</tbody>
-</table>}
-</Panel>
-<div style={{marginTop:14}}/><Panel title="Godkända kunder">
-{!appr.length?<Empty txt="Inga kunder"/>:<table style={{width:“100%”,borderCollapse:“collapse”,fontSize:13}}>
-<thead><tr style={{background:S2}}>{[“Namn”,“Företag”,“E-post”,“Registrerad”,“Ordrar”].map(h=><th key={h} style={{padding:“9px 14px”,textAlign:“left”,fontSize:10,fontWeight:700,textTransform:“uppercase”,color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
-<tbody>{appr.map(u=><tr key={u.id} style={{borderBottom:`1px solid ${LN}`}}><td style={{padding:“9px 14px”,fontWeight:600}}>{u.firstName} {u.lastName}</td><td style={{padding:“9px 14px”}}>{u.company}</td><td style={{padding:“9px 14px”}}>{u.email}</td><td style={{padding:“9px 14px”,fontSize:12,color:MU}}>{new Date(u.registered).toLocaleDateString(“sv-SE”)}</td><td style={{padding:“9px 14px”,textAlign:“center”}}>{db.orders.filter(o=>o.userId===u.id).length}</td></tr>)}
-</tbody>
-</table>}
-</Panel>
-</>;
+  const ap=id=>{upd(d=>({...d,users:d.users.map(u=>u.id===id?{...u,approved:true}:u)}));toast2("Godkänd","ok");};
+  const rj=id=>{if(!confirm("Avvisa?"))return;upd(d=>({...d,users:d.users.filter(u=>u.id!==id)}));};
+  const pend=db.users.filter(u=>!u.approved&&u.role!=="admin");
+  const appr=db.users.filter(u=>u.approved&&u.role!=="admin");
+  return <>
+    <Panel title="⏳ Väntar på godkännande" titleColor={AM}>
+      {!pend.length?<Empty txt="Inga väntande"/>:<table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+        <thead><tr style={{background:S2}}>{["Namn","Företag","E-post","Datum","Åtgärd"].map(h=><th key={h} style={{padding:"9px 14px",textAlign:"left",fontSize:10,fontWeight:700,textTransform:"uppercase",color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
+        <tbody>{pend.map(u=><tr key={u.id} style={{borderBottom:`1px solid ${LN}`,background:"rgba(255,251,235,.5)"}}><td style={{padding:"9px 14px",fontWeight:600}}>{u.firstName} {u.lastName}</td><td style={{padding:"9px 14px"}}>{u.company}</td><td style={{padding:"9px 14px"}}>{u.email}</td><td style={{padding:"9px 14px",fontSize:12,color:MU}}>{new Date(u.registered).toLocaleDateString("sv-SE")}</td><td style={{padding:"9px 14px"}}><div style={{display:"flex",gap:5}}><button onClick={()=>ap(u.id)} style={{...b(GR),height:28,padding:"0 11px",fontSize:12}}>✓</button><button onClick={()=>rj(u.id)} style={{...b(RD),height:28,padding:"0 11px",fontSize:12}}>✕</button></div></td></tr>)}
+        </tbody>
+      </table>}
+    </Panel>
+    <div style={{marginTop:14}}/><Panel title="Godkända kunder">
+      {!appr.length?<Empty txt="Inga kunder"/>:<table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+        <thead><tr style={{background:S2}}>{["Namn","Företag","E-post","Registrerad","Ordrar"].map(h=><th key={h} style={{padding:"9px 14px",textAlign:"left",fontSize:10,fontWeight:700,textTransform:"uppercase",color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
+        <tbody>{appr.map(u=><tr key={u.id} style={{borderBottom:`1px solid ${LN}`}}><td style={{padding:"9px 14px",fontWeight:600}}>{u.firstName} {u.lastName}</td><td style={{padding:"9px 14px"}}>{u.company}</td><td style={{padding:"9px 14px"}}>{u.email}</td><td style={{padding:"9px 14px",fontSize:12,color:MU}}>{new Date(u.registered).toLocaleDateString("sv-SE")}</td><td style={{padding:"9px 14px",textAlign:"center"}}>{db.orders.filter(o=>o.userId===u.id).length}</td></tr>)}
+        </tbody>
+      </table>}
+    </Panel>
+  </>;
 }
 
 function AInqs({db,setInqM}){
-return <Panel title="Alla offertförfrågningar">
-{!db.orders.length?<Empty txt="Inga förfrågningar"/>:<table style={{width:“100%”,borderCollapse:“collapse”,fontSize:13}}>
-<thead><tr style={{background:S2}}>{[”#”,“Datum”,“Kund”,“Företag”,“Betalning”,“Värde”,“Status”,””].map(h=><th key={h} style={{padding:“9px 15px”,textAlign:h===“Värde”?“right”:“left”,fontSize:10,fontWeight:700,textTransform:“uppercase”,letterSpacing:.9,color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
-<tbody>{[…db.orders].reverse().map(o=><tr key={o.id} onClick={()=>setInqM(o)} style={{cursor:“pointer”,borderBottom:`1px solid ${LN}`}} onMouseEnter={e=>e.currentTarget.style.background=BLL} onMouseLeave={e=>e.currentTarget.style.background=“transparent”}>
-<td style={{padding:“10px 15px”}}><span style={{fontFamily:“monospace”,fontSize:11,color:BL}}>#{String(db.orders.indexOf(o)+1).padStart(4,“0”)}</span></td>
-<td style={{padding:“10px 15px”,fontSize:12,color:MU}}>{new Date(o.date).toLocaleDateString(“sv-SE”)}</td>
-<td style={{padding:“10px 15px”,fontWeight:600}}>{o.customerName}</td>
-<td style={{padding:“10px 15px”}}>{o.company||”—”}</td>
-<td style={{padding:“10px 15px”,fontSize:12}}>{PAY.find(m=>m.id===o.payMethod)?.label||“Faktura”}</td>
-<td style={{padding:“10px 15px”,textAlign:“right”,fontFamily:“monospace”,fontSize:12}}>{o.totalValue>0?kr2(o.totalValue):”—”}</td>
-<td style={{padding:“10px 15px”}}><SChip s={o.status}/></td>
-<td style={{padding:“10px 15px”,textAlign:“center”}}><button style={{…b(BG,INK),height:26,padding:“0 9px”,border:`1.5px solid ${LN}`,fontSize:11}} onClick={e=>{e.stopPropagation();setInqM(o);}}>👁</button></td>
-</tr>)}</tbody>
-</table>}
-</Panel>;
+  return <Panel title="Alla offertförfrågningar">
+    {!db.orders.length?<Empty txt="Inga förfrågningar"/>:<table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+      <thead><tr style={{background:S2}}>{["#","Datum","Kund","Företag","Betalning","Värde","Status",""].map(h=><th key={h} style={{padding:"9px 15px",textAlign:h==="Värde"?"right":"left",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.9,color:MU,borderBottom:`1px solid ${LN}`}}>{h}</th>)}</tr></thead>
+      <tbody>{[...db.orders].reverse().map(o=><tr key={o.id} onClick={()=>setInqM(o)} style={{cursor:"pointer",borderBottom:`1px solid ${LN}`}} onMouseEnter={e=>e.currentTarget.style.background=BLL} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+        <td style={{padding:"10px 15px"}}><span style={{fontFamily:"monospace",fontSize:11,color:BL}}>#{String(db.orders.indexOf(o)+1).padStart(4,"0")}</span></td>
+        <td style={{padding:"10px 15px",fontSize:12,color:MU}}>{new Date(o.date).toLocaleDateString("sv-SE")}</td>
+        <td style={{padding:"10px 15px",fontWeight:600}}>{o.customerName}</td>
+        <td style={{padding:"10px 15px"}}>{o.company||"—"}</td>
+        <td style={{padding:"10px 15px",fontSize:12}}>{PAY.find(m=>m.id===o.payMethod)?.label||"Faktura"}</td>
+        <td style={{padding:"10px 15px",textAlign:"right",fontFamily:"monospace",fontSize:12}}>{o.totalValue>0?kr2(o.totalValue):"—"}</td>
+        <td style={{padding:"10px 15px"}}><SChip s={o.status}/></td>
+        <td style={{padding:"10px 15px",textAlign:"center"}}><button style={{...b(BG,INK),height:26,padding:"0 9px",border:`1.5px solid ${LN}`,fontSize:11}} onClick={e=>{e.stopPropagation();setInqM(o);}}>👁</button></td>
+      </tr>)}</tbody>
+    </table>}
+  </Panel>;
 }
 
 /* ── EDIT PROD MODAL ── */
 function EditProd({p,db,onSave,onDel,onClose}){
-const isNew=!p?.id;
-const [d,setD]=useState({id:””,artNr:””,name:””,supplier:””,desc:””,price:””,buyPrice:””,stock:0,minStock:5,catId:””,subId:””,img:””,images:[],specs:[],…p});
-const [tab,setTab]=useState(“info”);
-const s=(k,v)=>setD(x=>({…x,[k]:v}));
-const subs=db.subs.filter(x=>x.pid===d.catId);
+  const isNew=!p?.id;
+  const [d,setD]=useState({id:"",artNr:"",name:"",supplier:"",desc:"",price:"",buyPrice:"",stock:0,minStock:5,catId:"",subId:"",img:"",images:[],specs:[],...p});
+  const [tab,setTab]=useState("info");
+  const s=(k,v)=>setD(x=>({...x,[k]:v}));
+  const subs=db.subs.filter(x=>x.pid===d.catId);
 
-const addImgs=e=>{Array.from(e.target.files).forEach(f=>{if(f.size>5*1024*1024)return;const r=new FileReader();r.onload=ev=>setD(x=>({…x,images:[…x.images,{id:uid(),src:ev.target.result}]}));r.readAsDataURL(f);});};
-const rmImg=id=>setD(x=>({…x,images:x.images.filter(i=>i.id!==id)}));
-const setMain=id=>setD(x=>{const img=x.images.find(i=>i.id===id);return img?{…x,img:img.src}:x;});
+  const addImgs=e=>{Array.from(e.target.files).forEach(f=>{if(f.size>5*1024*1024)return;const r=new FileReader();r.onload=ev=>setD(x=>({...x,images:[...x.images,{id:uid(),src:ev.target.result}]}));r.readAsDataURL(f);});};
+  const rmImg=id=>setD(x=>({...x,images:x.images.filter(i=>i.id!==id)}));
+  const setMain=id=>setD(x=>{const img=x.images.find(i=>i.id===id);return img?{...x,img:img.src}:x;});
 
-const addSpec=()=>setD(x=>({…x,specs:[…x.specs,{id:uid(),param:””,value:””,unit:””}]}));
-const updSpec=(id,k,v)=>setD(x=>({…x,specs:x.specs.map(s=>s.id===id?{…s,[k]:v}:s)}));
-const delSpec=id=>setD(x=>({…x,specs:x.specs.filter(s=>s.id!==id)}));
+  const addSpec=()=>setD(x=>({...x,specs:[...x.specs,{id:uid(),param:"",value:"",unit:""}]}));
+  const updSpec=(id,k,v)=>setD(x=>({...x,specs:x.specs.map(s=>s.id===id?{...s,[k]:v}:s)}));
+  const delSpec=id=>setD(x=>({...x,specs:x.specs.filter(s=>s.id!==id)}));
 
-const save=()=>{
-if(!d.artNr||!d.name){alert(“Artikelnr och benämning krävs.”);return;}
-if(!d.catId){alert(“Välj en kategori.”);return;}
-if(isNew&&db.products.find(p=>p.artNr===d.artNr)){alert(“Artikelnr finns redan.”);return;}
-onSave(d);
-};
+  const save=()=>{
+    if(!d.artNr||!d.name){alert("Artikelnr och benämning krävs.");return;}
+    if(!d.catId){alert("Välj en kategori.");return;}
+    if(isNew&&db.products.find(p=>p.artNr===d.artNr)){alert("Artikelnr finns redan.");return;}
+    onSave(d);
+  };
 
-return <Overlay onClose={onClose} w={880}>
-<div style={{display:“flex”,alignItems:“center”,justifyContent:“space-between”,padding:“18px 22px”,borderBottom:`1px solid ${LN}`,position:“sticky”,top:0,background:”#fff”,zIndex:1}}>
-<div style={{display:“flex”,alignItems:“center”,gap:10}}><div style={{width:36,height:36,borderRadius:8,background:“rgba(15,23,42,.07)”,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:16}}>📦</div><div><div style={{fontFamily:“Syne,sans-serif”,fontSize:15,fontWeight:700}}>{isNew?“Ny artikel”:“Redigera artikel”}</div>{!isNew&&<div style={{fontSize:12,color:MU}}>{d.artNr}</div>}</div></div>
-<button onClick={onClose} style={{width:30,height:30,background:BG,border:`1.5px solid ${LN}`,borderRadius:8,color:SL,fontSize:12,cursor:“pointer”}}>✕</button>
-</div>
-{/* TABS */}
-<div style={{display:“flex”,gap:2,padding:“0 22px”,borderBottom:`1px solid ${LN}`,background:S2}}>
-{[[“info”,“📋 Info”],[“images”,`🖼 Bilder${d.images.length>0?" ("+d.images.length+")":""}`],[“specs”,`📐 Specifikationer${d.specs.length>0?" ("+d.specs.length+")":""}`]].map(([id,l])=><button key={id} onClick={()=>setTab(id)} style={{height:42,padding:“0 15px”,border:“none”,background:“none”,borderBottom:`2px solid ${tab===id?N:"transparent"}`,color:tab===id?N:MU,fontWeight:tab===id?700:500,fontSize:13,cursor:“pointer”}}>{l}</button>)}
-</div>
-<div style={{padding:“20px 22px”,minHeight:340}}>
-{tab===“info”&&<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:11}}>
-<FI label="Artikelnr *"><input value={d.artNr} onChange={e=>s(“artNr”,e.target.value)} style={inp()} placeholder=“PDM001” disabled={!isNew}/></FI>
-<FI label="Leverantör"><input value={d.supplier} onChange={e=>s(“supplier”,e.target.value)} style={inp()} placeholder=“Leverantör AB”/></FI>
-<FI label="Benämning *" full><input value={d.name} onChange={e=>s(“name”,e.target.value)} style={inp()} placeholder=“Produktens fullständiga namn”/></FI>
-<FI label="Beskrivning" full><textarea value={d.desc} onChange={e=>s(“desc”,e.target.value)} style={{…inp(),height:“auto”,padding:“9px 11px”}} rows={3} placeholder=“Teknisk beskrivning…”/></FI>
-<FI label="Utpris (kr)"><input type=“number” value={d.price} onChange={e=>s(“price”,e.target.value)} style={inp()} placeholder=“0.00”/></FI>
-<FI label="Inköpspris (kr)"><input type=“number” value={d.buyPrice} onChange={e=>s(“buyPrice”,e.target.value)} style={inp()} placeholder=“0.00”/></FI>
-<FI label="Lager (st)"><input type=“number” value={d.stock} onChange={e=>s(“stock”,e.target.value)} style={inp()}/></FI>
-<FI label="Min. saldo"><input type=“number” value={d.minStock} onChange={e=>s(“minStock”,e.target.value)} style={inp()}/></FI>
-<FI label="Kategori *" full><div style={{display:“flex”,flexWrap:“wrap”,gap:6,marginTop:4}}>{db.cats.map(c=><button key={c.id} type=“button” onClick={()=>{s(“catId”,c.id);s(“subId”,””);}} style={{padding:“5px 12px”,borderRadius:20,border:`1.5px solid ${d.catId===c.id?BL:LN}`,background:d.catId===c.id?BLL:“none”,color:d.catId===c.id?BL:SL,fontSize:12.5,cursor:“pointer”,fontWeight:d.catId===c.id?600:400}}>{c.icon} {c.name}</button>)}</div></FI>
-{subs.length>0&&<FI label="Underkategori" full><div style={{display:“flex”,flexWrap:“wrap”,gap:6,marginTop:4}}><button type=“button” onClick={()=>s(“subId”,””)} style={{padding:“5px 12px”,borderRadius:20,border:`1.5px solid ${!d.subId?BL:LN}`,background:!d.subId?BLL:“none”,color:!d.subId?BL:SL,fontSize:12.5,cursor:“pointer”}}>Ingen</button>{subs.map(x=><button key={x.id} type=“button” onClick={()=>s(“subId”,x.id)} style={{padding:“5px 12px”,borderRadius:20,border:`1.5px solid ${d.subId===x.id?BL:LN}`,background:d.subId===x.id?BLL:“none”,color:d.subId===x.id?BL:SL,fontSize:12.5,cursor:“pointer”,fontWeight:d.subId===x.id?600:400}}>{x.name}</button>)}</div></FI>}
-</div>}
-
-```
-  {tab==="images"&&<div>
-    <div style={{fontSize:13,color:MU,marginBottom:14}}>Lägg till flera bilder. Håll musen över en bild och tryck ★ för att sätta den som <strong>huvudbild</strong> i produktkortet.</div>
-    <div style={{display:"flex",flexWrap:"wrap",gap:11,marginBottom:14}}>
-      {d.images.map(img=><div key={img.id} style={{position:"relative",width:116,height:116,borderRadius:10,overflow:"hidden",border:`2px solid ${d.img===img.src?BL:LN}`}}>
-        <img src={img.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.38)",opacity:0,display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"opacity .15s"}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0}>
-          <button onClick={()=>setMain(img.id)} style={{width:30,height:30,borderRadius:"50%",border:"none",background:d.img===img.src?"#f59e0b":"rgba(255,255,255,.9)",color:d.img===img.src?"#fff":INK,fontSize:15,cursor:"pointer"}} title="Sätt som huvudbild">★</button>
-          <button onClick={()=>rmImg(img.id)} style={{width:30,height:30,borderRadius:"50%",border:"none",background:"rgba(220,38,38,.85)",color:"#fff",fontSize:13,cursor:"pointer"}}>✕</button>
-        </div>
-        {d.img===img.src&&<div style={{position:"absolute",bottom:5,left:5,background:"#f59e0b",color:"#fff",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:8,letterSpacing:.3}}>HUVUD</div>}
-      </div>)}
-      <label style={{width:116,height:116,border:`2px dashed ${GH}`,borderRadius:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:S2,gap:5}}>
-        <input type="file" accept="image/*" multiple onChange={addImgs} style={{display:"none"}}/>
-        <div style={{fontSize:28,opacity:.35}}>+</div>
-        <div style={{fontSize:11.5,color:MU,textAlign:"center"}}>Lägg till</div>
-      </label>
+  return <Overlay onClose={onClose} w={880}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 22px",borderBottom:`1px solid ${LN}`,position:"sticky",top:0,background:"#fff",zIndex:1}}>
+      <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:36,height:36,borderRadius:8,background:"rgba(15,23,42,.07)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>📦</div><div><div style={{fontFamily:"Syne,sans-serif",fontSize:15,fontWeight:700}}>{isNew?"Ny artikel":"Redigera artikel"}</div>{!isNew&&<div style={{fontSize:12,color:MU}}>{d.artNr}</div>}</div></div>
+      <button onClick={onClose} style={{width:30,height:30,background:BG,border:`1.5px solid ${LN}`,borderRadius:8,color:SL,fontSize:12,cursor:"pointer"}}>✕</button>
     </div>
-    <div style={{fontSize:11.5,color:GH}}>JPG, PNG, WEBP · Max 5 MB per bild</div>
-  </div>}
+    {/* TABS */}
+    <div style={{display:"flex",gap:2,padding:"0 22px",borderBottom:`1px solid ${LN}`,background:S2}}>
+      {[["info","📋 Info"],["images",`🖼 Bilder${d.images.length>0?" ("+d.images.length+")":""}`],["specs",`📐 Specifikationer${d.specs.length>0?" ("+d.specs.length+")":""}`]].map(([id,l])=><button key={id} onClick={()=>setTab(id)} style={{height:42,padding:"0 15px",border:"none",background:"none",borderBottom:`2px solid ${tab===id?N:"transparent"}`,color:tab===id?N:MU,fontWeight:tab===id?700:500,fontSize:13,cursor:"pointer"}}>{l}</button>)}
+    </div>
+    <div style={{padding:"20px 22px",minHeight:340}}>
+      {tab==="info"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11}}>
+        <FI label="Artikelnr *"><input value={d.artNr} onChange={e=>s("artNr",e.target.value)} style={inp()} placeholder="PDM001" disabled={!isNew}/></FI>
+        <FI label="Leverantör"><input value={d.supplier} onChange={e=>s("supplier",e.target.value)} style={inp()} placeholder="Leverantör AB"/></FI>
+        <FI label="Benämning *" full><input value={d.name} onChange={e=>s("name",e.target.value)} style={inp()} placeholder="Produktens fullständiga namn"/></FI>
+        <FI label="Beskrivning" full><textarea value={d.desc} onChange={e=>s("desc",e.target.value)} style={{...inp(),height:"auto",padding:"9px 11px"}} rows={3} placeholder="Teknisk beskrivning…"/></FI>
+        <FI label="Utpris (kr)"><input type="number" value={d.price} onChange={e=>s("price",e.target.value)} style={inp()} placeholder="0.00"/></FI>
+        <FI label="Inköpspris (kr)"><input type="number" value={d.buyPrice} onChange={e=>s("buyPrice",e.target.value)} style={inp()} placeholder="0.00"/></FI>
+        <FI label="Lager (st)"><input type="number" value={d.stock} onChange={e=>s("stock",e.target.value)} style={inp()}/></FI>
+        <FI label="Min. saldo"><input type="number" value={d.minStock} onChange={e=>s("minStock",e.target.value)} style={inp()}/></FI>
+        <FI label="Kategori *" full><div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>{db.cats.map(c=><button key={c.id} type="button" onClick={()=>{s("catId",c.id);s("subId","");}} style={{padding:"5px 12px",borderRadius:20,border:`1.5px solid ${d.catId===c.id?BL:LN}`,background:d.catId===c.id?BLL:"none",color:d.catId===c.id?BL:SL,fontSize:12.5,cursor:"pointer",fontWeight:d.catId===c.id?600:400}}>{c.icon} {c.name}</button>)}</div></FI>
+        {subs.length>0&&<FI label="Underkategori" full><div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}><button type="button" onClick={()=>s("subId","")} style={{padding:"5px 12px",borderRadius:20,border:`1.5px solid ${!d.subId?BL:LN}`,background:!d.subId?BLL:"none",color:!d.subId?BL:SL,fontSize:12.5,cursor:"pointer"}}>Ingen</button>{subs.map(x=><button key={x.id} type="button" onClick={()=>s("subId",x.id)} style={{padding:"5px 12px",borderRadius:20,border:`1.5px solid ${d.subId===x.id?BL:LN}`,background:d.subId===x.id?BLL:"none",color:d.subId===x.id?BL:SL,fontSize:12.5,cursor:"pointer",fontWeight:d.subId===x.id?600:400}}>{x.name}</button>)}</div></FI>}
+      </div>}
 
-  {tab==="specs"&&<div>
-    <div style={{fontSize:13,color:MU,marginBottom:14}}>Lägg till tekniska specifikationer — t.ex. D, ap, S, bs, R, Grade. Visas i en tabell på produktsidan.</div>
-    {d.specs.length>0&&<div style={{marginBottom:12}}>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 90px 36px",gap:8,marginBottom:7}}>
-        {["Parameter","Värde","Enhet",""].map(h=><div key={h} style={{fontSize:10.5,fontWeight:700,textTransform:"uppercase",letterSpacing:.8,color:MU}}>{h}</div>)}
-      </div>
-      {d.specs.map(sp=><div key={sp.id} style={{display:"grid",gridTemplateColumns:"1fr 1fr 90px 36px",gap:8,marginBottom:7,alignItems:"center"}}>
-        <input value={sp.param} onChange={e=>updSpec(sp.id,"param",e.target.value)} style={{...inp(),height:38}} placeholder="D"/>
-        <input value={sp.value} onChange={e=>updSpec(sp.id,"value",e.target.value)} style={{...inp(),height:38}} placeholder="13.8"/>
-        <input value={sp.unit} onChange={e=>updSpec(sp.id,"unit",e.target.value)} style={{...inp(),height:38}} placeholder="mm"/>
-        <button onClick={()=>delSpec(sp.id)} style={{width:36,height:36,border:`1.5px solid ${LN}`,borderRadius:8,background:"none",color:MU,cursor:"pointer",fontSize:13}}>✕</button>
-      </div>)}
-    </div>}
-    <button onClick={addSpec} style={{...b(BLL,BL),border:`1.5px solid ${BLM}`,height:36,display:"flex",alignItems:"center",gap:7,marginBottom:18}}>+ Lägg till rad</button>
-    {d.specs.length>0&&<div style={{background:S2,border:`1px solid ${LN}`,borderRadius:10,overflow:"hidden"}}>
-      <div style={{padding:"10px 13px",fontSize:10.5,fontWeight:700,textTransform:"uppercase",letterSpacing:.8,color:MU,borderBottom:`1px solid ${LN}`}}>Förhandsgranskning</div>
-      <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
-        <thead><tr style={{background:BLL}}>{["Parameter","Värde","Enhet"].map(h=><th key={h} style={{padding:"7px 13px",textAlign:"left",fontSize:10.5,fontWeight:700,textTransform:"uppercase",color:BL,borderBottom:`1px solid ${BLM}`}}>{h}</th>)}</tr></thead>
-        <tbody>{d.specs.filter(sp=>sp.param).map((sp,i)=><tr key={sp.id} style={{background:i%2===0?"#fff":S2,borderBottom:`1px solid ${LN}`}}><td style={{padding:"8px 13px",fontWeight:600,color:INK}}>{sp.param}</td><td style={{padding:"8px 13px",fontFamily:"monospace",color:N,fontWeight:600}}>{sp.value}</td><td style={{padding:"8px 13px",color:MU,fontSize:12}}>{sp.unit}</td></tr>)}</tbody>
-      </table>
-    </div>}
-  </div>}
-</div>
-<div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"14px 22px",borderTop:`1px solid ${LN}`,background:S2}}>
-  {!isNew&&<button onClick={()=>onDel(d.id)} style={{...b(RD),marginRight:"auto"}}>🗑 Ta bort</button>}
-  <button onClick={onClose} style={{...b("#fff",SL),border:`1.5px solid ${LN}`}}>Avbryt</button>
-  <button onClick={save} style={b(N)}>Spara artikel</button>
-</div>
-```
+      {tab==="images"&&<div>
+        <div style={{fontSize:13,color:MU,marginBottom:14}}>Lägg till flera bilder. Håll musen över en bild och tryck ★ för att sätta den som <strong>huvudbild</strong> i produktkortet.</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:11,marginBottom:14}}>
+          {d.images.map(img=><div key={img.id} style={{position:"relative",width:116,height:116,borderRadius:10,overflow:"hidden",border:`2px solid ${d.img===img.src?BL:LN}`}}>
+            <img src={img.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+            <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.38)",opacity:0,display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"opacity .15s"}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0}>
+              <button onClick={()=>setMain(img.id)} style={{width:30,height:30,borderRadius:"50%",border:"none",background:d.img===img.src?"#f59e0b":"rgba(255,255,255,.9)",color:d.img===img.src?"#fff":INK,fontSize:15,cursor:"pointer"}} title="Sätt som huvudbild">★</button>
+              <button onClick={()=>rmImg(img.id)} style={{width:30,height:30,borderRadius:"50%",border:"none",background:"rgba(220,38,38,.85)",color:"#fff",fontSize:13,cursor:"pointer"}}>✕</button>
+            </div>
+            {d.img===img.src&&<div style={{position:"absolute",bottom:5,left:5,background:"#f59e0b",color:"#fff",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:8,letterSpacing:.3}}>HUVUD</div>}
+          </div>)}
+          <label style={{width:116,height:116,border:`2px dashed ${GH}`,borderRadius:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:S2,gap:5}}>
+            <input type="file" accept="image/*" multiple onChange={addImgs} style={{display:"none"}}/>
+            <div style={{fontSize:28,opacity:.35}}>+</div>
+            <div style={{fontSize:11.5,color:MU,textAlign:"center"}}>Lägg till</div>
+          </label>
+        </div>
+        <div style={{fontSize:11.5,color:GH}}>JPG, PNG, WEBP · Max 5 MB per bild</div>
+      </div>}
 
-</Overlay>;
+      {tab==="specs"&&<div>
+        <div style={{fontSize:13,color:MU,marginBottom:14}}>Lägg till tekniska specifikationer — t.ex. D, ap, S, bs, R, Grade. Visas i en tabell på produktsidan.</div>
+        {d.specs.length>0&&<div style={{marginBottom:12}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 90px 36px",gap:8,marginBottom:7}}>
+            {["Parameter","Värde","Enhet",""].map(h=><div key={h} style={{fontSize:10.5,fontWeight:700,textTransform:"uppercase",letterSpacing:.8,color:MU}}>{h}</div>)}
+          </div>
+          {d.specs.map(sp=><div key={sp.id} style={{display:"grid",gridTemplateColumns:"1fr 1fr 90px 36px",gap:8,marginBottom:7,alignItems:"center"}}>
+            <input value={sp.param} onChange={e=>updSpec(sp.id,"param",e.target.value)} style={{...inp(),height:38}} placeholder="D"/>
+            <input value={sp.value} onChange={e=>updSpec(sp.id,"value",e.target.value)} style={{...inp(),height:38}} placeholder="13.8"/>
+            <input value={sp.unit} onChange={e=>updSpec(sp.id,"unit",e.target.value)} style={{...inp(),height:38}} placeholder="mm"/>
+            <button onClick={()=>delSpec(sp.id)} style={{width:36,height:36,border:`1.5px solid ${LN}`,borderRadius:8,background:"none",color:MU,cursor:"pointer",fontSize:13}}>✕</button>
+          </div>)}
+        </div>}
+        <button onClick={addSpec} style={{...b(BLL,BL),border:`1.5px solid ${BLM}`,height:36,display:"flex",alignItems:"center",gap:7,marginBottom:18}}>+ Lägg till rad</button>
+        {d.specs.length>0&&<div style={{background:S2,border:`1px solid ${LN}`,borderRadius:10,overflow:"hidden"}}>
+          <div style={{padding:"10px 13px",fontSize:10.5,fontWeight:700,textTransform:"uppercase",letterSpacing:.8,color:MU,borderBottom:`1px solid ${LN}`}}>Förhandsgranskning</div>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+            <thead><tr style={{background:BLL}}>{["Parameter","Värde","Enhet"].map(h=><th key={h} style={{padding:"7px 13px",textAlign:"left",fontSize:10.5,fontWeight:700,textTransform:"uppercase",color:BL,borderBottom:`1px solid ${BLM}`}}>{h}</th>)}</tr></thead>
+            <tbody>{d.specs.filter(sp=>sp.param).map((sp,i)=><tr key={sp.id} style={{background:i%2===0?"#fff":S2,borderBottom:`1px solid ${LN}`}}><td style={{padding:"8px 13px",fontWeight:600,color:INK}}>{sp.param}</td><td style={{padding:"8px 13px",fontFamily:"monospace",color:N,fontWeight:600}}>{sp.value}</td><td style={{padding:"8px 13px",color:MU,fontSize:12}}>{sp.unit}</td></tr>)}</tbody>
+          </table>
+        </div>}
+      </div>}
+    </div>
+    <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"14px 22px",borderTop:`1px solid ${LN}`,background:S2}}>
+      {!isNew&&<button onClick={()=>onDel(d.id)} style={{...b(RD),marginRight:"auto"}}>🗑 Ta bort</button>}
+      <button onClick={onClose} style={{...b("#fff",SL),border:`1.5px solid ${LN}`}}>Avbryt</button>
+      <button onClick={save} style={b(N)}>Spara artikel</button>
+    </div>
+  </Overlay>;
 }
 
 /* ── INQ MODAL ── */
 function InqModal({order,db,cu,upd,onClose,toast2}){
-const [status,setStatus]=useState(order.status);
-const isAdmin=cu?.role===“admin”;
-const pay=PAY.find(m=>m.id===order.payMethod);
-const idx=db.orders.findIndex(o=>o.id===order.id);
-const saveS=()=>{upd(d=>({…d,orders:d.orders.map(o=>o.id===order.id?{…o,status}:o)}));toast2(“Status uppdaterad”,“ok”);onClose();};
-return <div style={{padding:22}}>
-<div style={{display:“flex”,alignItems:“center”,justifyContent:“space-between”,marginBottom:18}}>
-<div style={{display:“flex”,alignItems:“center”,gap:10}}><div style={{width:36,height:36,borderRadius:8,background:GRL,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:16}}>📋</div><div><div style={{fontFamily:“Syne,sans-serif”,fontSize:15,fontWeight:700}}>Offert #{String(idx+1).padStart(4,“0”)}</div><div style={{fontSize:12,color:MU}}>{new Date(order.date).toLocaleString(“sv-SE”)}</div></div></div>
-<button onClick={onClose} style={{width:28,height:28,background:BG,border:`1.5px solid ${LN}`,borderRadius:7,color:SL,fontSize:12,cursor:“pointer”}}>✕</button>
-</div>
-<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:11,marginBottom:16}}>
-<div style={{background:S2,border:`1px solid ${LN}`,borderRadius:11,padding:13}}><div style={{fontSize:10,fontWeight:700,textTransform:“uppercase”,letterSpacing:.9,color:MU,marginBottom:8}}>Kund</div><div style={{fontWeight:700,fontSize:14,marginBottom:3}}>{order.customerName}</div><div style={{fontSize:13,color:SL}}>{order.company||”—”}</div><div style={{fontSize:13,color:BL,marginTop:3}}>{order.email}</div>{order.phone&&<div style={{fontSize:13,color:MU}}>{order.phone}</div>}</div>
-<div style={{background:S2,border:`1px solid ${LN}`,borderRadius:11,padding:13}}><div style={{fontSize:10,fontWeight:700,textTransform:“uppercase”,letterSpacing:.9,color:MU,marginBottom:8}}>Order</div><SChip s={order.status}/><div style={{fontSize:13,color:MU,marginTop:7}}>{new Date(order.date).toLocaleString(“sv-SE”)}</div><div style={{fontSize:13,color:SL,marginTop:5,fontWeight:500}}>{pay?pay.icon+” “+pay.label:“Faktura”}</div>{order.note&&<div style={{fontSize:12,color:MU,marginTop:7,fontStyle:“italic”}}>”{order.note}”</div>}</div>
-</div>
-<div style={{fontSize:10,fontWeight:700,textTransform:“uppercase”,letterSpacing:.9,color:MU,marginBottom:8}}>Artiklar</div>
-<div style={{background:S2,border:`1px solid ${LN}`,borderRadius:11,overflow:“hidden”,marginBottom:order.message?13:0}}>
-{order.items.map((it,i)=><div key={i} style={{display:“flex”,justifyContent:“space-between”,alignItems:“center”,padding:“8px 13px”,borderBottom:`1px solid ${LN}`,fontSize:13}}><span style={{color:SL}}><strong>{it.qty}×</strong> {it.artNr} — {it.name}</span><span style={{fontFamily:“monospace”,fontWeight:600,color:N}}>{it.price?kr2(it.lineTotal):”—”}</span></div>)}
-<div style={{display:“flex”,justifyContent:“space-between”,padding:“9px 13px”,fontWeight:700,fontSize:13,background:“rgba(37,99,235,.04)”}}><span>Totalt (exkl. moms)</span><span style={{fontFamily:“monospace”,color:N}}>{order.totalValue>0?kr2(order.totalValue):”—”}</span></div>
-</div>
-{order.message&&<div style={{background:S2,border:`1px solid ${LN}`,borderRadius:8,padding:11,fontSize:13,color:SL,marginBottom:0}}>{order.message}</div>}
-<div style={{display:“flex”,gap:8,justifyContent:“flex-end”,paddingTop:16,alignItems:“center”}}>
-{isAdmin&&<select value={status} onChange={e=>setStatus(e.target.value)} style={{height:36,border:`1.5px solid ${LN}`,borderRadius:8,padding:“0 10px”,fontSize:13,background:S2,cursor:“pointer”,marginRight:“auto”}}>{[“Ny”,“Läst”,“Under behandling”,“Offert skickad”,“Avslutad”].map(s=><option key={s} value={s}>{s}</option>)}</select>}
-<button onClick={onClose} style={{…b(”#fff”,SL),border:`1.5px solid ${LN}`}}>Stäng</button>
-{isAdmin&&<><button onClick={saveS} style={b(N)}>Spara</button><button onClick={()=>{window.location.href=`mailto:${order.email}?subject=${encodeURIComponent("Offert #"+String(idx+1).padStart(4,"0")+" — PBA Solution AB")}&body=${encodeURIComponent("Hej "+order.customerName+",\n\nTack för din offertförfrågan.\n\nMed vänliga hälsningar,\nPBA Solution AB")}`;}} style={b(GR)}>📧 Svara</button></>}
-</div>
-
+  const [status,setStatus]=useState(order.status);
+  const isAdmin=cu?.role==="admin";
+  const pay=PAY.find(m=>m.id===order.payMethod);
+  const idx=db.orders.findIndex(o=>o.id===order.id);
+  const saveS=()=>{upd(d=>({...d,orders:d.orders.map(o=>o.id===order.id?{...o,status}:o)}));toast2("Status uppdaterad","ok");onClose();};
+  return <div style={{padding:22}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
+      <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:36,height:36,borderRadius:8,background:GRL,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>📋</div><div><div style={{fontFamily:"Syne,sans-serif",fontSize:15,fontWeight:700}}>Offert #{String(idx+1).padStart(4,"0")}</div><div style={{fontSize:12,color:MU}}>{new Date(order.date).toLocaleString("sv-SE")}</div></div></div>
+      <button onClick={onClose} style={{width:28,height:28,background:BG,border:`1.5px solid ${LN}`,borderRadius:7,color:SL,fontSize:12,cursor:"pointer"}}>✕</button>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:16}}>
+      <div style={{background:S2,border:`1px solid ${LN}`,borderRadius:11,padding:13}}><div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.9,color:MU,marginBottom:8}}>Kund</div><div style={{fontWeight:700,fontSize:14,marginBottom:3}}>{order.customerName}</div><div style={{fontSize:13,color:SL}}>{order.company||"—"}</div><div style={{fontSize:13,color:BL,marginTop:3}}>{order.email}</div>{order.phone&&<div style={{fontSize:13,color:MU}}>{order.phone}</div>}</div>
+      <div style={{background:S2,border:`1px solid ${LN}`,borderRadius:11,padding:13}}><div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.9,color:MU,marginBottom:8}}>Order</div><SChip s={order.status}/><div style={{fontSize:13,color:MU,marginTop:7}}>{new Date(order.date).toLocaleString("sv-SE")}</div><div style={{fontSize:13,color:SL,marginTop:5,fontWeight:500}}>{pay?pay.icon+" "+pay.label:"Faktura"}</div>{order.note&&<div style={{fontSize:12,color:MU,marginTop:7,fontStyle:"italic"}}>"{order.note}"</div>}</div>
+    </div>
+    <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:.9,color:MU,marginBottom:8}}>Artiklar</div>
+    <div style={{background:S2,border:`1px solid ${LN}`,borderRadius:11,overflow:"hidden",marginBottom:order.message?13:0}}>
+      {order.items.map((it,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 13px",borderBottom:`1px solid ${LN}`,fontSize:13}}><span style={{color:SL}}><strong>{it.qty}×</strong> {it.artNr} — {it.name}</span><span style={{fontFamily:"monospace",fontWeight:600,color:N}}>{it.price?kr2(it.lineTotal):"—"}</span></div>)}
+      <div style={{display:"flex",justifyContent:"space-between",padding:"9px 13px",fontWeight:700,fontSize:13,background:"rgba(37,99,235,.04)"}}><span>Totalt (exkl. moms)</span><span style={{fontFamily:"monospace",color:N}}>{order.totalValue>0?kr2(order.totalValue):"—"}</span></div>
+    </div>
+    {order.message&&<div style={{background:S2,border:`1px solid ${LN}`,borderRadius:8,padding:11,fontSize:13,color:SL,marginBottom:0}}>{order.message}</div>}
+    <div style={{display:"flex",gap:8,justifyContent:"flex-end",paddingTop:16,alignItems:"center"}}>
+      {isAdmin&&<select value={status} onChange={e=>setStatus(e.target.value)} style={{height:36,border:`1.5px solid ${LN}`,borderRadius:8,padding:"0 10px",fontSize:13,background:S2,cursor:"pointer",marginRight:"auto"}}>{["Ny","Läst","Under behandling","Offert skickad","Avslutad"].map(s=><option key={s} value={s}>{s}</option>)}</select>}
+      <button onClick={onClose} style={{...b("#fff",SL),border:`1.5px solid ${LN}`}}>Stäng</button>
+      {isAdmin&&<><button onClick={saveS} style={b(N)}>Spara</button><button onClick={()=>{window.location.href=`mailto:${order.email}?subject=${encodeURIComponent("Offert #"+String(idx+1).padStart(4,"0")+" — PBA Solution AB")}&body=${encodeURIComponent("Hej "+order.customerName+",\n\nTack för din offertförfrågan.\n\nMed vänliga hälsningar,\nPBA Solution AB")}`;}} style={b(GR)}>📧 Svara</button></>}
+    </div>
   </div>;
 }
 
 /* ── CAT/SUB MODALS ── */
 function CatModal({cat,upd,onClose,toast2}){
-const [nm,setNm]=useState(cat.name||””);const [ic,setIc]=useState(cat.icon||“⚙️”);
-const save=()=>{if(!nm){alert(“Ange namn.”);return;}if(cat.id){upd(d=>({…d,cats:d.cats.map(c=>c.id===cat.id?{…c,name:nm,icon:ic}:c)}));}else{upd(d=>({…d,cats:[…d.cats,{id:uid(),name:nm,icon:ic}]}));}toast2(“Sparad”,“ok”);onClose();};
-return <Overlay onClose={onClose} w={440}><div style={{padding:22}}><div style={{fontFamily:“Syne,sans-serif”,fontSize:16,fontWeight:700,marginBottom:18}}>{cat.id?“Redigera kategori”:“Ny kategori”}</div><div style={{display:“flex”,flexDirection:“column”,gap:11}}><FI label="Namn *"><input value={nm} onChange={e=>setNm(e.target.value)} style={inp()} placeholder=“t.ex. Skär”/></FI><FI label="Ikon (emoji)"><input value={ic} onChange={e=>setIc(e.target.value)} style={inp()} placeholder=“✂️” maxLength={4}/></FI></div><div style={{display:“flex”,gap:8,justifyContent:“flex-end”,paddingTop:18}}><button onClick={onClose} style={{…b(”#fff”,SL),border:`1.5px solid ${LN}`}}>Avbryt</button><button onClick={save} style={b(N)}>Spara</button></div></div></Overlay>;
+  const [nm,setNm]=useState(cat.name||"");const [ic,setIc]=useState(cat.icon||"⚙️");
+  const save=()=>{if(!nm){alert("Ange namn.");return;}if(cat.id){upd(d=>({...d,cats:d.cats.map(c=>c.id===cat.id?{...c,name:nm,icon:ic}:c)}));}else{upd(d=>({...d,cats:[...d.cats,{id:uid(),name:nm,icon:ic}]}));}toast2("Sparad","ok");onClose();};
+  return <Overlay onClose={onClose} w={440}><div style={{padding:22}}><div style={{fontFamily:"Syne,sans-serif",fontSize:16,fontWeight:700,marginBottom:18}}>{cat.id?"Redigera kategori":"Ny kategori"}</div><div style={{display:"flex",flexDirection:"column",gap:11}}><FI label="Namn *"><input value={nm} onChange={e=>setNm(e.target.value)} style={inp()} placeholder="t.ex. Skär"/></FI><FI label="Ikon (emoji)"><input value={ic} onChange={e=>setIc(e.target.value)} style={inp()} placeholder="✂️" maxLength={4}/></FI></div><div style={{display:"flex",gap:8,justifyContent:"flex-end",paddingTop:18}}><button onClick={onClose} style={{...b("#fff",SL),border:`1.5px solid ${LN}`}}>Avbryt</button><button onClick={save} style={b(N)}>Spara</button></div></div></Overlay>;
 }
 function SubModal({sub,db,upd,onClose,toast2}){
-const [nm,setNm]=useState(sub.name||””);const [pid,setPid]=useState(sub.pid||db.cats[0]?.id||””);
-const save=()=>{if(!nm){alert(“Ange namn.”);return;}if(sub.id){upd(d=>({…d,subs:d.subs.map(s=>s.id===sub.id?{…s,name:nm,pid}:s)}));}else{upd(d=>({…d,subs:[…d.subs,{id:uid(),name:nm,pid}]}));}toast2(“Sparad”,“ok”);onClose();};
-return <Overlay onClose={onClose} w={440}><div style={{padding:22}}><div style={{fontFamily:“Syne,sans-serif”,fontSize:16,fontWeight:700,marginBottom:18}}>Underkategori</div><div style={{display:“flex”,flexDirection:“column”,gap:11}}><FI label="Namn *"><input value={nm} onChange={e=>setNm(e.target.value)} style={inp()} placeholder=“t.ex. HM-borr”/></FI><FI label="Tillhör kategori *"><select value={pid} onChange={e=>setPid(e.target.value)} style={{…inp()}}>{db.cats.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></FI></div><div style={{display:“flex”,gap:8,justifyContent:“flex-end”,paddingTop:18}}><button onClick={onClose} style={{…b(”#fff”,SL),border:`1.5px solid ${LN}`}}>Avbryt</button><button onClick={save} style={b(N)}>Spara</button></div></div></Overlay>;
+  const [nm,setNm]=useState(sub.name||"");const [pid,setPid]=useState(sub.pid||db.cats[0]?.id||"");
+  const save=()=>{if(!nm){alert("Ange namn.");return;}if(sub.id){upd(d=>({...d,subs:d.subs.map(s=>s.id===sub.id?{...s,name:nm,pid}:s)}));}else{upd(d=>({...d,subs:[...d.subs,{id:uid(),name:nm,pid}]}));}toast2("Sparad","ok");onClose();};
+  return <Overlay onClose={onClose} w={440}><div style={{padding:22}}><div style={{fontFamily:"Syne,sans-serif",fontSize:16,fontWeight:700,marginBottom:18}}>Underkategori</div><div style={{display:"flex",flexDirection:"column",gap:11}}><FI label="Namn *"><input value={nm} onChange={e=>setNm(e.target.value)} style={inp()} placeholder="t.ex. HM-borr"/></FI><FI label="Tillhör kategori *"><select value={pid} onChange={e=>setPid(e.target.value)} style={{...inp()}}>{db.cats.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></FI></div><div style={{display:"flex",gap:8,justifyContent:"flex-end",paddingTop:18}}><button onClick={onClose} style={{...b("#fff",SL),border:`1.5px solid ${LN}`}}>Avbryt</button><button onClick={save} style={b(N)}>Spara</button></div></div></Overlay>;
 }
 
 /* ── UTIL ── */
-function Overlay({children,onClose,w=600}){return <div style={{position:“fixed”,inset:0,zIndex:500,display:“flex”,alignItems:“center”,justifyContent:“center”,background:“rgba(10,15,30,.5)”,padding:20}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}><div style={{background:”#fff”,borderRadius:18,width:w,maxWidth:“95vw”,maxHeight:“92vh”,overflowY:“auto”,boxShadow:“0 24px 80px rgba(0,0,0,.14)”}} onClick={e=>e.stopPropagation()}>{children}</div></div>;}
-function Panel({title,titleColor,actions,children}){return <div style={{background:”#fff”,border:`1px solid ${LN}`,borderRadius:15,overflow:“hidden”,marginBottom:0}}><div style={{display:“flex”,alignItems:“center”,justifyContent:“space-between”,padding:“14px 19px”,borderBottom:`1px solid ${LN}`}}><div style={{fontFamily:“Syne,sans-serif”,fontSize:14.5,fontWeight:700,color:titleColor||INK}}>{title}</div>{actions&&<div style={{display:“flex”,gap:7,alignItems:“center”}}>{actions}</div>}</div>{children}</div>;}
-function Empty({txt}){return <div style={{textAlign:“center”,padding:“32px”,color:GH,fontSize:13}}>{txt}</div>;}
-function SChip({s}){const m={Ny:{bg:BLL,c:BL,b:BLM},Läst:{bg:BG,c:SL,b:LN},“Under behandling”:{bg:AML,c:AM,b:AMM},“Offert skickad”:{bg:“rgba(15,23,42,.07)”,c:N,b:“rgba(15,23,42,.14)”},Avslutad:{bg:GRL,c:GR,b:GRL}};const st=m[s]||m[“Läst”];return <span style={{fontSize:10.5,fontWeight:600,padding:“3px 9px”,borderRadius:20,background:st.bg,color:st.c,border:`1px solid ${st.b}`}}>{s}</span>;}
+function Overlay({children,onClose,w=600}){return <div style={{position:"fixed",inset:0,zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(10,15,30,.5)",padding:20}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}><div style={{background:"#fff",borderRadius:18,width:w,maxWidth:"95vw",maxHeight:"92vh",overflowY:"auto",boxShadow:"0 24px 80px rgba(0,0,0,.14)"}} onClick={e=>e.stopPropagation()}>{children}</div></div>;}
+function Panel({title,titleColor,actions,children}){return <div style={{background:"#fff",border:`1px solid ${LN}`,borderRadius:15,overflow:"hidden",marginBottom:0}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 19px",borderBottom:`1px solid ${LN}`}}><div style={{fontFamily:"Syne,sans-serif",fontSize:14.5,fontWeight:700,color:titleColor||INK}}>{title}</div>{actions&&<div style={{display:"flex",gap:7,alignItems:"center"}}>{actions}</div>}</div>{children}</div>;}
+function Empty({txt}){return <div style={{textAlign:"center",padding:"32px",color:GH,fontSize:13}}>{txt}</div>;}
+function SChip({s}){const m={Ny:{bg:BLL,c:BL,b:BLM},Läst:{bg:BG,c:SL,b:LN},"Under behandling":{bg:AML,c:AM,b:AMM},"Offert skickad":{bg:"rgba(15,23,42,.07)",c:N,b:"rgba(15,23,42,.14)"},Avslutad:{bg:GRL,c:GR,b:GRL}};const st=m[s]||m["Läst"];return <span style={{fontSize:10.5,fontWeight:600,padding:"3px 9px",borderRadius:20,background:st.bg,color:st.c,border:`1px solid ${st.b}`}}>{s}</span>;}
